@@ -107,7 +107,7 @@ test('serial navigation and media-links fallback work with back controls', () =>
 });
 
 test('multiple movie parts and navigation fallback', () => {
-  const h = harness({ noContainer: true, noController: true, noManifest: true, respond(req) {
+  const h = harness({ noController: true, noManifest: true, respond(req) {
     if (req.url.includes('/search')) return { items: [{ id: 7 }] };
     return { item: { videos: [video({ title: '' }), video({ title: 'Part 2' })] } };
   } });
@@ -116,9 +116,10 @@ test('multiple movie parts and navigation fallback', () => {
   const normal = harness(); normal.click({ original_name: 'Original' }); normal.back(); assert.deepEqual(normal.toggles, ['full']);
 });
 
-test('single movie back reloads the item and empty seasons remain navigable', () => {
+test('single movie back returns to results without reloading and empty seasons remain navigable', () => {
   const h = harness(); h.click(); h.select(); h.back();
-  assert.equal(h.requests.filter(r => r.url.includes('/v1/items/7')).length, 2);
+  assert.equal(h.requests.filter(r => r.url.includes('/v1/items/7')).length, 1);
+  assert.equal(h.current.title, 'Результаты KinoPub');
   const empty = harness({ respond(req) { return req.url.includes('/search') ? { items: [{ id: 7 }] } : { item: { seasons: [{}] } }; } });
   empty.click(); empty.select(); empty.select(); assert.equal(empty.current.items.length, 0); empty.back();
 });
@@ -307,4 +308,89 @@ test('device login uses trusted activation URLs and explains where to obtain and
     assert.equal(h.settings.find(entry => entry.param.name === 'kp_self_login').param.type, 'button');
     h.modal.onBack();
   }
+});
+
+
+test('native Select.close invokes onBack once and never recurses or runs the selected action', () => {
+  const h = harness();
+  h.click();
+  const menu = h.current;
+  assert.equal(h.requests.length, 1);
+  h.back();
+  assert.equal(h.closes, 1);
+  assert.deepEqual(h.toggles, ['full']);
+  assert.equal(h.requests.length, 1);
+  h.click();
+  const closes = h.closes;
+  h.select();
+  assert.equal(h.closes, closes);
+  assert.notEqual(h.current, menu);
+  assert.equal(h.requests.length, 3);
+  h.back();
+  assert.equal(h.closes, closes + 1);
+  assert.equal(h.current.title, 'Результаты KinoPub');
+  assert.equal(h.requests.length, 3);
+});
+
+test('KinoPub registers in the native Watch source container, never in the visible action toolbar', () => {
+  const h = harness();
+  h.mount();
+  const source = h.nodes.find(node => typeof node.input === 'string' && node.input.includes('kp-self-button') && node.handlers['hover:enter']);
+  const container = h.nodes.find(node => node.input === '.buttons--container');
+  assert.ok(container.children.includes(source));
+  assert.equal(source.children[1].value, 'KinoPub');
+  assert.equal(h.nodes.some(node => /full-start-new__buttons|full-start__buttons/.test(node.input)), false);
+  source.handlers['hover:enter']();
+  assert.match(h.requests[0].url, /items\/search/);
+  const unsupported = harness({ noContainer: true });
+  unsupported.mount();
+  assert.equal(unsupported.nodes.some(node => node.handlers['hover:enter']), false);
+  assert.match(unsupported.notices[0], /Обнови Lampa/);
+});
+
+
+test('device metadata updates the existing session on startup and after login without registering another device', t => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  for (const options of [{ platform: 'tizen' }, { platform: 'webos' }, { platform: 'browser' }, {}, { noPlatform: true }, { noPlatformGet: true }, { deviceNotifyFailure: true }]) {
+    const h = harness(options);
+    assert.equal(h.deviceRequests.length, 1);
+    const req = h.deviceRequests[0];
+    assert.equal(req.url, 'https://api.service-kp.com/v1/device/notify');
+    assert.equal(req.headers.Authorization, 'Bearer test-access');
+    assert.equal(req.headers['Content-Type'], 'application/x-www-form-urlencoded');
+    const info = new URLSearchParams(req.body);
+    assert.equal(info.get('title'), 'Kinolamp / Lampa');
+    assert.equal(info.get('hardware'), options.platform || 'Lampa');
+    assert.equal(info.get('software'), 'Kinolamp 0.2.1');
+    assert.equal(info.size, 3);
+    assert.equal(h.requests.length, 0);
+    assert.equal(h.storage.get('kp_self_access'), 'test-access');
+    h.click(); h.select(); h.select();
+    assert.equal(h.plays.length, 1);
+  }
+  const fresh = harness({ storage: { kp_self_access: '' } });
+  assert.equal(fresh.deviceRequests.length, 0);
+  fresh.action('login');
+  t.mock.timers.tick(5000);
+  assert.equal(fresh.deviceRequests.length, 1);
+  assert.equal(fresh.deviceRequests[0].headers.Authorization, 'Bearer new-test-access');
+});
+
+test('device metadata POST refreshes authentication without moving the payload into the URL', () => {
+  const requests = [];
+  const client = plugin.createClient(clientStore(), (method, url, body, headers, done) => {
+    requests.push({ method, url, body, headers });
+    if (url.endsWith('/oauth2/token')) done(null, { access_token: 'refreshed' });
+    else if (headers.Authorization === 'Bearer test-access') done({ status: 401 });
+    else done(null, { status: 200 });
+  });
+  client.notifyDevice({ title: 'Kinolamp / Lampa' }, error => assert.equal(error, null));
+  const posts = requests.filter(req => req.url.endsWith('/device/notify'));
+  assert.equal(posts.length, 2);
+  for (const req of posts) {
+    assert.equal(req.method, 'POST');
+    assert.equal(req.body, 'title=Kinolamp%20%2F%20Lampa');
+    assert.equal(req.url.includes('?'), false);
+  }
+  assert.equal(posts[1].headers.Authorization, 'Bearer refreshed');
 });
