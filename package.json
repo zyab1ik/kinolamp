@@ -1,0 +1,12 @@
+{
+  "name": "lampa-kinopub-selfhosted",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal Lampa KinoPub plugin and optional authenticated HLS reducer",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check public/kp.js"
+  }
+}

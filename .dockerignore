@@ -1,0 +1,6 @@
+**
+!go.mod
+!*.go
+!public/
+!public/**
+*_test.go

@@ -1,0 +1,6 @@
+# Replace lampa.example.com and provide a real email for ACME if needed.
+lampa.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8788
+    # No access logging: HLS ticket paths are short-lived capabilities.
+}
