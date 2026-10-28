@@ -1,4 +1,4 @@
-/* Kinolamp 0.1.0 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.2.0 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,9 +9,12 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.1.0';
+  var VERSION = '0.2.0';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
+  // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
+  var CLIENT_ID = 'xbmc';
+  var CLIENT_SECRET = 'cgg3gtifu46urtfp2zp1nqtba0k2ezxh';
 
   function escapeText(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
@@ -124,9 +127,8 @@
     }
     function logout() { generation++; set('access', ''); set('refresh', ''); }
     function oauth(path, grant, done) {
-      if (!get('client_id') || !get('client_secret')) { done({ code: 'client_missing' }); return; }
-      grant.client_id = get('client_id');
-      grant.client_secret = get('client_secret');
+      grant.client_id = CLIENT_ID;
+      grant.client_secret = CLIENT_SECRET;
       transport('POST', API + path, form(grant), { 'Content-Type': 'application/x-www-form-urlencoded' }, done);
     }
     function refresh(done) {
@@ -237,7 +239,7 @@
       });
     }
     function errorMessage(error) {
-      if (error && error.code === 'client_missing') return 'Сначала получи Client ID и Client Secret приложения у support@kino.pub и введи их в Настройки → Kinolamp. Затем здесь появится код активации устройства.';
+      if (error && error.code === 'invalid_client') return 'KinoPub временно не принимает общий клиент. Повтори вход позже или проверь обновления Kinolamp.';
       if (error && (error.code === 'login_required' || error.status === 401)) return 'Нужна авторизация: Настройки → Kinolamp → Войти.';
       return 'Запрос не выполнен. Проверь сеть, подписку и настройки. Подробные данные не отправляются в логи.';
     }
@@ -260,8 +262,12 @@
         var expires = Date.now() + Math.min(Number(json.expires_in) || 600, 3600) * 1000;
         var previous = (Lampa.Controller.enabled() || {}).name;
         var content = $('<div></div>');
-        content.append($('<p></p>').text('Открой https://kino.pub/device на телефоне и введи код:'));
+        var verification = /^https:\/\/(?:kino\.pub|kino\.watch)\/device\/?$/.test(json.verification_uri) ? json.verification_uri : 'https://kino.pub/device';
+        content.append($('<p></p>').text('1. Открой на телефоне или в другой вкладке: ' + verification));
         content.append($('<h1></h1>').text(String(json.user_code)));
+        content.append($('<p></p>').text('2. Войди в аккаунт KinoPub, введи этот код в поле «Код устройства» и нажми «Добавить».'));
+        content.append($('<p></p>').text('3. Оставь это окно открытым — вход завершится автоматически.'));
+        content.append($('<a target="_blank" rel="noopener noreferrer"></a>').attr('href', verification).text('Открыть страницу активации'));
         content.append($('<p></p>').text('Назад — отменить. Пароль остаётся на сайте KinoPub.'));
         function close() { stopLogin(); Lampa.Modal.close(); restore(previous); }
         Lampa.Modal.open({ title: 'Kinolamp', html: content, size: 'small', onBack: close });
@@ -414,10 +420,8 @@
       });
     }
     function action(key, name, run) {
-      Lampa.SettingsApi.addParam({ component: 'kp_self', param: { name: PREFIX + key, type: 'trigger', 'default': false }, field: { name: name }, onChange: run });
+      Lampa.SettingsApi.addParam({ component: 'kp_self', param: { name: PREFIX + key, type: 'button' }, field: { name: name }, onChange: run });
     }
-    setting('client_id', 'input', 'OAuth Client ID', 'Client ID приложения KinoPub. Запросить можно у support@kino.pub.');
-    setting('client_secret', 'input', 'OAuth Client Secret', 'Хранится на устройстве. Не вводи пароль своего аккаунта.');
     setting('quality', 'select', 'Максимальное качество', 'Для HLS-прокси также ограничивает вариант внутри master.', { '480': '480p', '720': '720p', '1080': '1080p', '2160': '2160p' }, '1080');
     setting('proxy_enabled', 'trigger', 'Использовать свой HLS-прокси', 'Выключено по умолчанию. Для Samsung Tizen с проблемными HLS4.', '', false);
     setting('proxy_url', 'input', 'HTTPS-адрес своего HLS-прокси', 'Например https://lampa.example.com. Без завершающего пути.');

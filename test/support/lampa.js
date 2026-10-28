@@ -6,7 +6,7 @@ function store(values = {}) {
   return { values: structuredClone(values), get(k, fallback) { return Object.hasOwn(this.values, k) ? this.values[k] : fallback; }, set(k, v) { this.values[k] = v; } };
 }
 function clientStore(values = {}) {
-  return store({ kp_self_client_id: 'test-client', kp_self_client_secret: 'test-client-secret', kp_self_access: 'test-access', kp_self_refresh: 'test-refresh', ...values });
+  return store({ kp_self_access: 'test-access', kp_self_refresh: 'test-refresh', ...values });
 }
 function video(overrides = {}) {
   return { id: 77, title: 'Part 1', audios: [{ index: 1, lang: 'rus', type: { short_title: 'MVO' }, author: { title: 'Studio' }, codec: 'aac' }], files: [{ quality: '1080p', url: { hls2: 'https://edge.cdn.example/hls2/master', hls4: 'https://edge.cdn.example/hls4/master' } }, { quality: '720p', urls: { hls2: 'https://edge.cdn.example/720/master', hls4: 'https://edge.cdn.example/hls4/720' } }], subtitles: [{ lang: 'eng', url: 'https://edge.cdn.example/en.srt' }], ...overrides };
@@ -16,6 +16,7 @@ function harness(options = {}) {
   h.$ = function (input) {
     const n = { input, length: 1, children: [], handlers: {}, value: '',
       append(node) { this.children.push(node); return this; },
+      attr(name, value) { (this.attributes ||= {})[name] = value; return this; },
       text(value) { this.value = value; return this; },
       on(event, run) { this.handlers[event] = run; return this; },
       first() { return this; }, after(node) { this.children.push(node); return this; },

@@ -35,15 +35,19 @@ test('OAuth goes only to KinoPub and stores tokens without logging', () => {
   assert.equal(requests[0].headers.Authorization, 'Bearer test-access');
   assert.equal(requests[0].url, 'https://api.service-kp.com/v1/items/search?q=a%20%26%20b');
   client.oauth('/oauth2/device', { grant_type: 'device_code' }, () => {});
-  assert.match(requests[1].body, /client_id=test-client/);
+  assert.match(requests[1].body, /client_id=xbmc/);
   assert.equal(client.saveTokens({ access_token: 'next' }, client.generation()), true);
   assert.equal(storage.get('kp_self_refresh'), 'test-refresh');
   assert.equal(client.saveTokens({}, client.generation()), false);
   client.logout(); assert.equal(client.hasToken(), false);
   assert.equal(client.saveTokens({ access_token: 'old' }, 0), false);
   client.api('/user', null, e => assert.equal(e.code, 'login_required'));
-  const missing = plugin.createClient(store(), () => assert.fail('missing credentials sent'));
-  missing.oauth('/oauth2/device', {}, e => assert.equal(e.code, 'client_missing'));
+  let shared;
+  const fresh = plugin.createClient(store(), (method, url, body, headers, done) => { shared = new URLSearchParams(body); done(null, {}); });
+  fresh.oauth('/oauth2/device', { grant_type: 'device_code' }, e => assert.equal(e, null));
+  assert.equal(shared.get('client_id'), 'xbmc');
+  assert.ok(shared.get('client_secret'));
+  assert.equal(shared.get('grant_type'), 'device_code');
 });
 
 test('401 refresh is shared and logout prevents delayed responses restoring a session', () => {
@@ -202,10 +206,11 @@ test('device login expires, cancels and discards in-flight replies', t => {
 
 test('device login rejects invalid client and OAuth errors', t => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
-  const missing = harness({ storage: { kp_self_client_secret: '' } }); missing.action('login'); assert.match(missing.notices.at(-1), /Client ID/);
+  const unauthorized = harness({ respond() { return { failure: true, xhr: { status: 401, responseText: '{}' } }; } });
+  unauthorized.action('login'); assert.match(unauthorized.notices.at(-1), /Нужна авторизация/);
   const bad = harness({ respond() { return {}; } }); bad.action('login'); assert.match(bad.notices.at(-1), /Запрос не выполнен/);
   const h = harness(); h.action('login'); h.respond = () => ({ failure: true, xhr: { status: 401, responseText: '{"error":"invalid_client"}' } });
-  t.mock.timers.tick(5000); assert.match(h.notices.at(-1), /Нужна авторизация/);
+  t.mock.timers.tick(5000); assert.match(h.notices.at(-1), /не принимает общий клиент/);
 });
 
 test('network and JSON failures are user-safe; missing or empty API data does not play', () => {
@@ -268,7 +273,7 @@ test('extension metadata names only its own unnamed entry and preserves custom n
 test('empty input settings provide a real Lampa placeholder without storing it as credentials', () => {
   const h = harness({ storage: { kp_self_client_id: '', kp_self_client_secret: '' } });
   const inputs = h.settings.filter(entry => entry.param.type === 'input');
-  assert.equal(inputs.length, 4);
+  assert.equal(inputs.length, 2);
   for (const entry of inputs) {
     // Lampa interpolates param.placeholder into the DOM, then uses it for an empty value.
     const placeholder = String(entry.param.placeholder);
@@ -279,7 +284,27 @@ test('empty input settings provide a real Lampa placeholder without storing it a
     assert.equal(stored, '');
   }
   h.action('login');
-  assert.equal(h.requests.length, 0);
-  assert.match(h.notices.at(-1), /support@kino.pub/);
-  assert.match(h.notices.at(-1), /Затем.*код активации/);
+  assert.equal(h.requests.length, 1);
+  assert.equal(h.modal.html.children[1].value, 'ABC123');
+  assert.equal(h.settings.some(entry => /client_id|client_secret/.test(entry.param.name)), false);
+  h.modal.onBack();
+});
+
+
+test('device login uses trusted activation URLs and explains where to obtain and enter the code', () => {
+  for (const url of ['https://kino.watch/device', 'https://kino.pub/device/', 'https://evil.example/device', 'javascript:alert(1)', undefined]) {
+    const h = harness({ storage: { kp_self_client_id: 'obsolete', kp_self_client_secret: 'obsolete' }, respond() { return { code: 'private', user_code: 'ABCDE', verification_uri: url }; } });
+    h.action('login');
+    const body = new URLSearchParams(h.requests[0].body);
+    assert.equal(body.get('client_id'), 'xbmc');
+    assert.notEqual(body.get('client_secret'), 'obsolete');
+    const expected = url === 'https://kino.watch/device' || url === 'https://kino.pub/device/' ? url : 'https://kino.pub/device';
+    const children = h.modal.html.children;
+    assert.ok(children[0].value.includes(expected));
+    assert.equal(children[1].value, 'ABCDE');
+    assert.match(children[2].value, /Код устройства.*Добавить/);
+    assert.equal(children.find(node => node.attributes).attributes.href, expected);
+    assert.equal(h.settings.find(entry => entry.param.name === 'kp_self_login').param.type, 'button');
+    h.modal.onBack();
+  }
 });
