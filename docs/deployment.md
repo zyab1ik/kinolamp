@@ -1,6 +1,8 @@
 # Автодеплой Kinolamp
 
-Workflow `.github/workflows/ci.yml` запускает параллельно проверки Go/JS, 100% покрытие и проверку Docker. Только main после успешных проверок передаёт проверенный образ на `debian@eu3.filefor.net:2223`. Сайт: https://kinolamp.eu3.filefor.net/.
+Workflow `CI and Deployment` (`.github/workflows/ci.yml`) запускает параллельно проверки Go/JS, 100% покрытие и проверку Docker. Только main после успешных проверок передаёт проверенный образ на `debian@eu3.filefor.net:2223`. Сайт: https://kinolamp.eu3.filefor.net/.
+
+Workflow запускается один раз для PR в main и один раз после push/слияния в main; дублирующий push-run для ветки PR отключён. Названия workflow, jobs, шагов и итоговый отчёт — на английском. Устаревшие PR-запуски отменяются; текущая выкладка main не прерывается.
 
 В pull request и других ветках выкладка пропускается. До завершения установки `DEPLOY_ENABLED` не задан — деплой выключен. Итоговая таблица CI отличает проверку кода от выкладки. Для повторного запуска есть Run workflow из main; перед отправкой проверяется, что SHA ещё соответствует последнему main.
 
@@ -36,6 +38,7 @@ Workflow `.github/workflows/ci.yml` запускает параллельно п
 
 ```sh
 make check
+make check-ci
 make test-deploy
 make coverage
 make docker-build
@@ -46,3 +49,14 @@ make docker-build
 На VPS последняя успешная ревизия находится в `/home/debian/.local/state/kinolamp-deploy/revision`. Логи контейнера доступны через `docker logs --tail 50 kinolamp-kinolamp-1`, состояние — через `docker inspect`. Секреты `.env` в логи не выводить.
 
 Тест `make test-deploy` проверяет успешное обновление, слишком большой/повреждённый архив, неверный SHA label, ошибку запуска, откат по health, ошибку самого отката и отказ произвольным SSH-командам. Go/JS coverage проверяется отдельно и остаётся 100%.
+
+## GitHub Actions practices
+
+- Read-only `GITHUB_TOKEN` by default, with `actions: read` only for downloading the deployment artifact.
+- Actions pinned to full commit SHAs; checkout does not persist Git credentials.
+- Secrets are passed through environment variables only in the deployment step; no `pull_request_target` or execution of PR code with deployment credentials.
+- Explicit timeouts, branch filters, PR concurrency and serialized deployments.
+- The tested image is transferred between jobs using an immutable artifact, retained for one day.
+- `make check-ci` validates workflow syntax and job dependencies with a pinned actionlint version.
+
+References: [GitHub secure use](https://docs.github.com/en/actions/reference/security/secure-use), [workflow triggers](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow), [concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).

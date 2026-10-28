@@ -1,7 +1,8 @@
 SHELL := /bin/sh
+ACTIONLINT_VERSION := v1.7.12
 REVISION ?= $(shell git rev-parse HEAD)
 COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
-.PHONY: help check fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
+.PHONY: help check check-ci fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -10,6 +11,9 @@ check: ## Check Go formatting, vet and plugin syntax
 	@test -z "$$(gofmt -l cmd internal web)" || { echo 'Run make fmt'; exit 1; }
 	go vet ./...
 	node --check web/static/kp.js
+
+check-ci: ## Validate GitHub Actions workflow syntax and job dependencies
+	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) -shellcheck= .github/workflows/ci.yml
 
 fmt: ## Format Go source files
 	gofmt -w cmd internal web
