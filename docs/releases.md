@@ -5,17 +5,14 @@
 ## Publish a version
 
 1. Update `VERSION` and the VERSION/header in `web/static/kp.js` in a pull request, for example to `0.3.1`. Adjust the device-version assertion in the plugin test.
-2. Merge the pull request after CI passes. The existing main workflow automatically deploys the verified image.
-3. Synchronize a clean local main and run:
+2. Merge the pull request after CI passes. The main pipeline tests and deploys the verified image, checks public HTTPS, and completes its pipeline summary.
+3. The final **Release** stage automatically packages and publishes the new version. No local tag or manual GitHub release action is required.
 
-   ```sh
-   make release-check
-   make release
-   ```
+Release is a reusable workflow called only after every required main job succeeds and deployment reports `deployed=true`. Pull requests, failed/cancelled checks, disabled deployment and outdated commits whose deployment was skipped cannot publish. A tag push alone does not start publication.
 
-`make release` validates the version, requires a clean main matching origin/main, and pushes an annotated `v<VERSION>` tag. It never moves an existing tag to a different commit.
+The workflow checks out the exact tested/deployed commit, validates VERSION and main ancestry, repeats quality/coverage/release checks, then packages the archives. Only the final publishing job receives repository write permission. GitHub creates the version tag at the deployed commit; it is never moved. The existing version is skipped without rebuilding or modifying its assets. Bump VERSION in the next version PR; documentation-only merges do not republish an existing version.
 
-The Release workflow accepts tags matching the committed version, checks that the tag commit belongs to main, then runs quality checks, complete Go/JavaScript coverage and release-guard tests. It builds artifacts before granting the publishing job write access.
+`make release-check` still validates a clean, synchronized main. `make release` is an optional manual pre-tagging command; it does not bypass or trigger publication. A pre-existing tag for an unreleased version must point to the deployed commit, otherwise release fails safely. To retry a failed release, rerun the failed main pipeline jobs in GitHub Actions.
 
 ## Assets
 
@@ -36,4 +33,4 @@ make test-release
 
 Publication first creates/updates a draft, uploads all verified assets, then publishes it with generated release notes. A retry may replace draft assets but does not overwrite an already published release. A failed publication leaves a draft for retry rather than presenting an incomplete release as final.
 
-Publishing a tag does not independently deploy the VPS: deployment belongs to the main CI workflow. Creating a release does not make a private repository public.
+Release publication is the final main pipeline stage and never starts another deployment. Creating a release does not make a private repository public.

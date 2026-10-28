@@ -77,11 +77,11 @@ dist: check-version ## Build Linux amd64/arm64 release archives, plugin and chec
 release-check: check-version ## Validate the version and clean, synchronized main before tagging
 	bash scripts/tag-release.sh --check
 
-release: check-version ## Tag current main; GitHub Actions tests and publishes the release
+release: check-version ## Optionally pre-tag main; publishing still waits for successful CI and deployment
 	bash scripts/tag-release.sh
 
 test-release: ## Verify release guards against local disposable Git repositories
-	bash -n scripts/build-release.sh scripts/tag-release.sh test/release.test.sh
+	bash -n scripts/build-release.sh scripts/tag-release.sh scripts/release-plan.sh test/release.test.sh
 	bash test/release.test.sh
 
 clean: ## Remove build and coverage output
