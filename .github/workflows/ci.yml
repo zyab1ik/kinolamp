@@ -1,31 +1,72 @@
-name: Check and test
+name: Kinolamp · CI и деплой
 on:
   push:
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  test:
+  checks:
+    name: Проверки кода · формат и анализ
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Получить исходники
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Подготовить Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Подготовить Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
-      - run: make check
-      - run: make coverage
-      - run: make build
-  container:
+      - name: Проверить формат Go, go vet и синтаксис JavaScript
+        run: make check
+      - name: Проверить обработку деплоя и отката
+        run: make test-deploy
+  go-tests:
+    name: Go · тесты, race detector и покрытие 100%
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: make docker-build
-      - name: Verify non-root container and health
+      - name: Получить исходники
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Подготовить Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Проверить 100% покрытия Go
+        run: make coverage-go
+      - name: Собрать бинарный файл Go
+        run: make build
+  plugin-tests:
+    name: JavaScript · строки, ветви и функции 100%
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Получить исходники
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Подготовить Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Проверить 100% покрытия JavaScript
+        run: make coverage-js
+  container:
+    name: Docker · сборка и проверка запуска
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Получить исходники
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Собрать Docker-образ
+        run: make docker-build
+      - name: Проверить непривилегированный контейнер и health
         run: |
           test "$(docker image inspect -f '{{.Config.User}}' kinolamp:local)" = 65532:65532
           docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 kinolamp:local
@@ -35,3 +76,120 @@ jobs:
             sleep 1
           done
           exit 1
+      - name: Упаковать проверенный образ для VPS
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          REVISION: ${{ github.sha }}
+        run: |
+          docker tag kinolamp:local "kinolamp:$REVISION"
+          docker save "kinolamp:$REVISION" | gzip -1 > kinolamp-image.tar.gz
+      - name: Сохранить образ для этапа деплоя
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kinolamp-image
+          path: kinolamp-image.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+  deploy:
+    name: VPS · выкладка и проверка сайта
+    needs: [checks, go-tests, plugin-tests, container]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: kinolamp-production
+      cancel-in-progress: false
+    outputs:
+      deployed: ${{ steps.latest.outputs.deploy }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Получить проверенный образ
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: kinolamp-image
+      - name: Проверить актуальность коммита main
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          current=$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ "$current" = "$REVISION" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+            echo 'Появился более новый коммит main — пропускаем устаревшую выкладку.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Передать образ по SSH и дождаться health
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          REVISION: ${{ github.sha }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/kinolamp-ssh"
+          key="$RUNNER_TEMP/kinolamp-ssh/key"
+          hosts="$RUNNER_TEMP/kinolamp-ssh/known_hosts"
+          trap 'rm -rf "$RUNNER_TEMP/kinolamp-ssh"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$hosts"
+          ssh -T -p 2223 -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$hosts" -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 debian@eu3.filefor.net "deploy $REVISION" < kinolamp-image.tar.gz
+      - name: Проверить сайт через публичный HTTPS
+        if: steps.latest.outputs.deploy == 'true'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --max-time 15 https://kinolamp.eu3.filefor.net/health
+          curl --fail --silent --show-error --max-time 15 -I https://kinolamp.eu3.filefor.net/kp.js
+          echo '### Выкладка завершена' >> "$GITHUB_STEP_SUMMARY"
+          echo "Коммит: \`$GITHUB_SHA\` · [Открыть Kinolamp](https://kinolamp.eu3.filefor.net/)" >> "$GITHUB_STEP_SUMMARY"
+  summary:
+    name: Итог · результаты проверок и деплоя
+    if: always()
+    needs: [checks, go-tests, plugin-tests, container, deploy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Сформировать понятный отчёт
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          GO: ${{ needs.go-tests.result }}
+          JS: ${{ needs.plugin-tests.result }}
+          DOCKER: ${{ needs.container.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+          DEPLOYED: ${{ needs.deploy.outputs.deployed }}
+          ENABLED: ${{ vars.DEPLOY_ENABLED }}
+        run: |
+          if [ "$DEPLOY" = success ] && [ "$DEPLOYED" != true ]; then
+            DEPLOY='skipped — появился более новый main'
+          fi
+          if [ "$ENABLED" != true ]; then
+            DEPLOY='skipped — SSH-деплой ещё не активирован'
+          fi
+          status() {
+            case "$1" in
+              success) echo '✅ Успешно' ;;
+              failure) echo '❌ Ошибка' ;;
+              cancelled) echo '⏹ Отменено' ;;
+              *) echo "⏭ $1" ;;
+            esac
+          }
+          {
+            echo '## Kinolamp — результат запуска'
+            echo "Коммит: \`$GITHUB_SHA\`"
+            echo ''
+            echo '| Этап | Результат |'
+            echo '| --- | --- |'
+            echo "| Формат и анализ кода; проверка отката | $(status "$CHECKS") |"
+            echo "| Go: тесты, race detector, требуется 100% statements | $(status "$GO") |"
+            echo "| JavaScript: требуется 100% строк, ветвей и функций | $(status "$JS") |"
+            echo "| Docker: сборка, non-root, health | $(status "$DOCKER") |"
+            echo "| Выкладка на VPS и публичный HTTPS | $(status "$DEPLOY") |"
+            echo ''
+            echo 'Деплой выполняется только из main после всех проверок. В PR и других ветках он пропускается.'
+            echo '[Открыть сайт](https://kinolamp.eu3.filefor.net/)'
+          } >> "$GITHUB_STEP_SUMMARY"

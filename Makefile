@@ -1,6 +1,7 @@
 SHELL := /bin/sh
+REVISION ?= $(shell git rev-parse HEAD)
 COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
-.PHONY: help check fmt test test-go test-js coverage coverage-go coverage-js build run docker-build up down logs health clean
+.PHONY: help check fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -13,13 +14,17 @@ check: ## Check Go formatting, vet and plugin syntax
 fmt: ## Format Go source files
 	gofmt -w cmd internal web
 
-test: test-go test-js ## Run server and plugin tests
+test: test-go test-js test-deploy ## Run server and plugin tests
 
 test-go: ## Run Go tests with race detector
 	go test -race ./...
 
 test-js: ## Run JavaScript plugin tests (Node.js is only a development tool)
 	node --test test/*.test.js
+
+test-deploy: ## Verify image deployment, rollback and restricted SSH commands
+	bash -n scripts/deploy-receiver.sh test/deploy.test.sh
+	bash test/deploy.test.sh
 
 coverage: coverage-go coverage-js ## Require 100% Go statements and JS lines, branches and functions
 
@@ -40,7 +45,7 @@ run: ## Run locally using the current environment variables
 	go run ./cmd/kinolamp
 
 docker-build: ## Build production Docker image
-	docker build -f build/package/Dockerfile -t kinolamp:local .
+	docker build --label org.opencontainers.image.revision=$(REVISION) -f build/package/Dockerfile -t kinolamp:local .
 
 up: ## Build and start the VPS service
 	$(COMPOSE) up -d --build
