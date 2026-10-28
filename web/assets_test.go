@@ -6,7 +6,7 @@ import (
 )
 
 func TestEmbeddedAssets(t *testing.T) {
-	for _, name := range []string{"static/kp.js", "static/index.html"} {
+	for _, name := range []string{"static/kp.js", "static/index.html", "static/icon.svg", "static/style.css"} {
 		body, err := Files.ReadFile(name)
 		if err != nil || !bytes.Contains(body, []byte("Kinolamp")) {
 			t.Fatalf("missing or outdated embedded asset %s: %v", name, err)

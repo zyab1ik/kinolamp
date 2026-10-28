@@ -25,6 +25,14 @@ type rate struct {
 	count int
 	until time.Time
 }
+
+var publicAssets = map[string]struct{ name, contentType string }{
+	"/":          {"static/index.html", "text/html; charset=utf-8"},
+	"/kp.js":     {"static/kp.js", "application/javascript; charset=utf-8"},
+	"/style.css": {"static/style.css", "text/css; charset=utf-8"},
+	"/icon.svg":  {"static/icon.svg", "image/svg+xml"},
+}
+
 type app struct {
 	config  config
 	client  *http.Client
@@ -53,7 +61,7 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'")
 	origin := r.Header.Get("Origin")
 	allowedOrigin := origin == ""
 	for _, candidate := range a.config.origins {
@@ -74,21 +82,19 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 		return
 	}
-	if r.Method == "GET" {
-		if r.URL.Path == "/health" {
-			respond(w, 200, map[string]any{"ok": true, "version": "0.1.0", "proxy": a.config.proxy})
-			return
-		}
-		if r.URL.Path == "/" || r.URL.Path == "/kp.js" {
-			name, contentType := "static/kp.js", "application/javascript; charset=utf-8"
-			if r.URL.Path == "/" {
-				name, contentType = "static/index.html", "text/html; charset=utf-8"
-			}
-			body, _ := web.Files.ReadFile(name) // Embedded at compile time; names are constants.
-			w.Header().Set("Content-Type", contentType)
+	if file, ok := publicAssets[r.URL.Path]; ok && (r.Method == "GET" || r.Method == "HEAD") {
+		body, _ := web.Files.ReadFile(file.name) // Embedded at compile time; names are constants.
+		w.Header().Set("Content-Type", file.contentType)
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Only public, credential-free assets.
+		w.WriteHeader(http.StatusOK)
+		if r.Method == "GET" {
 			_, _ = w.Write(body)
-			return
 		}
+		return
+	}
+	if r.Method == "GET" && r.URL.Path == "/health" {
+		respond(w, 200, map[string]any{"ok": true, "version": "0.1.0", "proxy": a.config.proxy})
+		return
 	}
 	if !a.config.proxy {
 		fail(w, 404, "not_found")

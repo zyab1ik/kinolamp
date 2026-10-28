@@ -264,6 +264,27 @@ func TestHTTPPrivacyAndTickets(t *testing.T) {
 	require(t, call(disabled, "POST", "/api/manifests", validBody, c.token, "").Code == 404, "proxy enabled by default")
 }
 
+func TestPublicPluginAssetsAllowBrowserChecksWithoutOpeningPrivateAPI(t *testing.T) {
+	a := newApp(testConfig(), upstream(200, testMaster))
+	for _, route := range []string{"/", "/kp.js?cache=true", "/icon.svg", "/style.css"} {
+		for _, method := range []string{"GET", "HEAD"} {
+			w := call(a, method, route, "", "", "http://lampa.mx")
+			require(t, w.Code == 200 && w.Header().Get("Access-Control-Allow-Origin") == "*", "public plugin asset must support cross-origin checks")
+			require(t, w.Header().Get("Access-Control-Allow-Credentials") == "", "public assets must not request cookies")
+			if method == "HEAD" {
+				require(t, w.Body.Len() == 0, "HEAD must not return the body")
+			} else {
+				require(t, w.Body.Len() > 0, "GET must return the asset")
+			}
+		}
+	}
+	for _, route := range []string{"/api/manifests", "/hls/test.m3u8"} {
+		w := call(a, "GET", route, "", "", "http://lampa.mx")
+		require(t, w.Code == 403 && w.Header().Get("Access-Control-Allow-Origin") == "", "private API CORS must remain restricted")
+	}
+	require(t, call(a, "POST", "/kp.js", "", "", "").Code == 404, "public assets are read-only")
+}
+
 func TestHTTPFailuresAndLimits(t *testing.T) {
 	c := testConfig()
 	for _, body := range []string{"bad", "[]", `{"unexpected":true}`, `{}`, validBody + " {}", strings.Repeat("x", 12289), strings.ReplaceAll(validBody, `"voice":2`, `"voice":100`), strings.ReplaceAll(validBody, `"maxHeight":1080`, `"maxHeight":1`)} {

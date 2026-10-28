@@ -53,6 +53,22 @@
       .filter(Boolean).join(' · ') || ('Дорожка ' + (index + 1));
   }
 
+  function nameExtension(Lampa, root) {
+    var script = root.document && root.document.currentScript;
+    if (!script || !script.src || !Lampa.Plugins || !Lampa.Plugins.get || !Lampa.Plugins.save) return;
+    var own = script.src.split(/[?#]/)[0];
+    var changed = false;
+    Lampa.Plugins.get().forEach(function (entry) {
+      if (entry.url && entry.url.split(/[?#]/)[0] === own && !entry.name) {
+        entry.name = 'Kinolamp';
+        entry.author = 'zyab1ik';
+        entry.descr = 'KinoPub для Lampa · собственная инфраструктура';
+        changed = true;
+      }
+    });
+    if (changed) Lampa.Plugins.save();
+  }
+
   function mediaKey(item, video, context) {
     if (item.id === undefined || item.id === null) return '';
     return 'media:' + JSON.stringify([String(item.id), context.kind, context.season, String(video.id || video.media_id || context.number)]);
@@ -153,6 +169,7 @@
 
   function install(Lampa, $, root) {
     if (!$ || !Lampa.SettingsApi || !Lampa.Select || !Lampa.Reguest) return;
+    nameExtension(Lampa, root);
     var auth = null;
     function notify(message) { Lampa.Noty.show(message); }
     function transport(method, url, body, headers, done) {
@@ -387,7 +404,7 @@
       catch (_) { notify('Не удалось запустить плеер Lampa.'); }
     }
 
-    var icon = '<svg viewBox="0 0 64 64" width="48" height="48"><path d="M20 12L52 32L20 52Z" fill="currentColor"/></svg>';
+    var icon = '<svg viewBox="0 0 64 64" width="48" height="48"><rect width="64" height="64" rx="16" fill="#14232b"/><path d="M22 43v-5a18 18 0 1 1 20 0v5" fill="#7ce8c3"/><path d="m28 15 15 10-15 10Z" fill="#14232b"/><path d="M23 47h18m-15 7h12" fill="none" stroke="#7ce8c3" stroke-width="4" stroke-linecap="round"/></svg>';
     Lampa.SettingsApi.addComponent({ component: 'kp_self', name: 'Kinolamp', icon: icon });
     function setting(key, type, name, description, values, initial) {
       Lampa.SettingsApi.addParam({
@@ -432,5 +449,5 @@
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
-  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, mediaKey: mediaKey, createProgress: createProgress };
+  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
 });
