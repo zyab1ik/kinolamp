@@ -26,7 +26,7 @@ coverage-go: ## Require exactly 100% Go statement coverage, with race detector
 	@mkdir -p coverage
 	go test -race -covermode=atomic -coverprofile=coverage/go.out ./...
 	go tool cover -func=coverage/go.out
-	@awk 'NR > 1 && $$3 == 0 {missing++} END {if (missing) {print "FAIL: " missing " uncovered Go blocks"; exit 1}}' coverage/go.out
+	@awk 'NR > 1 && $$2 > 0 && $$3 == 0 {missing++} END {if (missing) {print "FAIL: " missing " uncovered Go statement blocks"; exit 1}}' coverage/go.out
 
 coverage-js: ## Require 100% JavaScript lines, branches and functions
 	node --experimental-test-coverage --test-coverage-include=public/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js
