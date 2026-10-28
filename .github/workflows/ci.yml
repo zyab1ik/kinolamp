@@ -38,7 +38,7 @@ jobs:
       - name: Test deployment and rollback handling
         run: make test-deploy
   go-tests:
-    name: Go tests (100% coverage)
+    name: Go tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -51,12 +51,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Run Go tests with race detection and enforce 100% coverage
+      - name: Run Go tests and coverage
         run: make coverage-go
       - name: Build Go binary
         run: make build
   plugin-tests:
-    name: JavaScript tests (100% coverage)
+    name: JavaScript tests
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -69,7 +69,7 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - name: Enforce 100% JavaScript line, branch and function coverage
+      - name: Run JavaScript tests and coverage
         run: make coverage-js
   container:
     name: Container build and smoke test
