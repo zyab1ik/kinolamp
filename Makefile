@@ -1,24 +1,32 @@
 SHELL := /bin/sh
+VERSION ?= $(shell cat VERSION)
+export VERSION
+LDFLAGS := -s -w -X github.com/zyab1ik/kinolamp/internal/app.Version=$(VERSION)
 ACTIONLINT_VERSION := v1.7.12
 REVISION ?= $(shell git rev-parse HEAD)
 COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
-.PHONY: help check check-ci fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
+.PHONY: help check check-ci check-version dist release release-check test-release fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-check: ## Check Go formatting, vet and plugin syntax
+check: check-version ## Check Go formatting, vet and plugin syntax
 	@test -z "$$(gofmt -l cmd internal web)" || { echo 'Run make fmt'; exit 1; }
 	go vet ./...
 	node --check web/static/kp.js
 
 check-ci: ## Validate GitHub Actions workflow syntax and job dependencies
-	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) -shellcheck= .github/workflows/ci.yml
+	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) -shellcheck= .github/workflows/*.yml
+
+check-version: ## Check the release and plugin versions agree
+	@printf '%s\n' "$(VERSION)" | LC_ALL=C grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$$'
+	@test "$(VERSION)" = "$$(cat VERSION)"
+	@test "$(VERSION)" = "$$(sed -n "s/  var VERSION = '\([^']*\)';/\1/p" web/static/kp.js)" || { echo 'VERSION and kp.js disagree'; exit 1; }
 
 fmt: ## Format Go source files
 	gofmt -w cmd internal web
 
-test: test-go test-js test-deploy ## Run server and plugin tests
+test: test-go test-js test-deploy test-release ## Run server and plugin tests
 
 test-go: ## Run Go tests with race detector
 	go test -race ./...
@@ -43,13 +51,13 @@ coverage-js: ## Require 100% JavaScript lines, branches and functions
 
 build: ## Build a standalone Go binary containing the plugin assets
 	@mkdir -p bin
-	CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/kinolamp ./cmd/kinolamp
+	CGO_ENABLED=0 go build -trimpath -ldflags="$(LDFLAGS)" -o bin/kinolamp ./cmd/kinolamp
 
 run: ## Run locally using the current environment variables
-	go run ./cmd/kinolamp
+	go run -ldflags="$(LDFLAGS)" ./cmd/kinolamp
 
 docker-build: ## Build production Docker image
-	docker build --label org.opencontainers.image.revision=$(REVISION) -f build/package/Dockerfile -t kinolamp:local .
+	docker build --build-arg VERSION=$(VERSION) --label org.opencontainers.image.version=$(VERSION) --label org.opencontainers.image.revision=$(REVISION) -f build/package/Dockerfile -t kinolamp:local .
 
 up: ## Build and start the VPS service
 	$(COMPOSE) up -d --build
@@ -63,5 +71,18 @@ logs: ## Follow application logs
 health: ## Check local container health
 	curl --fail --silent --show-error http://127.0.0.1:8788/health
 
+dist: check-version ## Build Linux amd64/arm64 release archives, plugin and checksums
+	bash scripts/build-release.sh
+
+release-check: check-version ## Validate the version and clean, synchronized main before tagging
+	bash scripts/tag-release.sh --check
+
+release: check-version ## Tag current main; GitHub Actions tests and publishes the release
+	bash scripts/tag-release.sh
+
+test-release: ## Verify release guards against local disposable Git repositories
+	bash -n scripts/build-release.sh scripts/tag-release.sh test/release.test.sh
+	bash test/release.test.sh
+
 clean: ## Remove build and coverage output
-	rm -rf bin coverage
+	rm -rf bin coverage dist

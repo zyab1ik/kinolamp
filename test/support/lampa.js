@@ -12,9 +12,12 @@ function video(overrides = {}) {
   return { id: 77, title: 'Part 1', audios: [{ index: 1, lang: 'rus', type: { short_title: 'MVO' }, author: { title: 'Studio' }, codec: 'aac' }], files: [{ quality: '1080p', url: { hls2: 'https://edge.cdn.example/hls2/master', hls4: 'https://edge.cdn.example/hls4/master' } }, { quality: '720p', urls: { hls2: 'https://edge.cdn.example/720/master', hls4: 'https://edge.cdn.example/hls4/720' } }], subtitles: [{ lang: 'eng', url: 'https://edge.cdn.example/en.srt' }], ...overrides };
 }
 function harness(options = {}) {
-  const h = { nodes: [], settings: [], notices: [], requests: [], deviceRequests: [], menus: [], toggles: [], plays: [], closes: 0, callbacks: [], listeners: {}, storage: clientStore(options.storage) };
+  const h = { controllers: {}, pages: [], routes: [], moves: [], nodes: [], settings: [], notices: [], requests: [], deviceRequests: [], menus: [], toggles: [], plays: [], closes: 0, callbacks: [], listeners: {}, storage: clientStore(options.storage) };
   h.$ = function (input) {
-    const n = { input, length: 1, children: [], handlers: {}, value: '',
+    if (input && input.mockNode) return input;
+    const n = { input, mockNode: true, length: 1, children: [], handlers: {}, value: '',
+      empty() { this.children = []; return this; },
+      remove() { this.removed = true; return this; },
       append(node) { this.children.push(node); return this; },
       attr(name, value) { (this.attributes ||= {})[name] = value; return this; },
       text(value) { this.value = value; return this; },
@@ -27,7 +30,7 @@ function harness(options = {}) {
         return found;
       }
     };
-    h.nodes.push(n); return n;
+    n[0] = n; h.nodes.push(n); return n;
   };
   h.holder = h.$('holder');
   h.respond = options.respond || function (request) {
@@ -66,7 +69,7 @@ function harness(options = {}) {
     },
     SettingsApi: { addComponent(c) { h.component = c; }, addParam(p) { h.settings.push(p); } },
     Select: { show(menu) { h.current = menu; h.menus.push(menu); }, close() { h.closes++; h.current.onBack(); } },
-    Controller: { enabled() { return options.noController ? null : { name: 'full' }; }, toggle(name) { h.toggles.push(name); } },
+    Controller: { enabled() { return options.noController ? null : { name: options.native ? h.controllerName || 'full' : 'full' }; }, add(name, handlers) { h.controllers[name] = handlers; }, toggle(name) { h.controllerName = name; h.toggles.push(name); if (h.controllers[name]) h.controllers[name].toggle(); }, collectionSet(view) { h.collection = view; }, collectionFocus(last) { h.focus = last; } },
     Noty: { show(message) { h.notices.push(message); } },
     Modal: { open(modal) { h.modal = modal; }, close() { h.modalClosed = (h.modalClosed || 0) + 1; } },
     Listener: { follow(event, cb) { h.listeners[event] = cb; } },
@@ -79,7 +82,31 @@ function harness(options = {}) {
   if (options.noTracking) delete h.Lampa.PlayerVideo;
   if (options.noPlayerListener) delete h.Lampa.Player.listener;
   if (options.noManifest) delete h.Lampa.Manifest;
-  plugin.install(h.Lampa, h.$, {});
+  h.navigation = { canmove() { return !!h.canMove; }, move(direction) { h.moves.push(direction); } };
+  if (options.native) {
+    h.components = {};
+    h.Lampa.Component = { add(name, component) { h.components[name] = component; } };
+    h.Lampa.Scroll = function () {
+      const node = h.$('scroll');
+      this.append = child => node.append(child);
+      this.render = () => node;
+      this.update = card => { h.scrollFocus = card; };
+      this.destroy = () => { h.scrollDestroyed = (h.scrollDestroyed || 0) + 1; };
+    };
+    h.Lampa.Activity = {
+      push(route) {
+        h.routes.push(JSON.parse(JSON.stringify(route)));
+        const page = new h.components[route.component](route);
+        page.activity = { loader(value) { h.loading = value; }, toggle() { if (h.pages.at(-1) === page) page.start(); } };
+        h.pages.push(page); page.create(); page.start();
+      },
+      backward() { const page = h.pages.pop(); page.destroy(); h.pages.at(-1)?.start(); }
+    };
+  }
+  plugin.install(h.Lampa, h.$, options.native ? { Navigator: h.navigation } : {});
+  h.descendants = function descendants(node) { return [node, ...node.children.flatMap(child => descendants(child))]; };
+  h.pageCards = () => h.descendants(h.pages.at(-1).render()).filter(node => String(node.input).includes('kp-page__card selector'));
+  h.openCard = index => h.pageCards()[index].handlers['hover:enter']();
   h.action = name => h.settings.find(s => s.param.name === 'kp_self_' + name).onChange();
   h.mount = (movie = { title: 'Film' }, extra = {}) => h.listeners.full({ type: 'complite', data: { movie }, object: { activity: { render() { return h.holder; } } }, ...extra });
   h.click = (movie) => { h.mount(movie); const button = h.nodes.find(n => typeof n.input === 'string' && n.input.includes('kp-self-button') && n.handlers['hover:enter']); if (button) button.handlers['hover:enter'](); };

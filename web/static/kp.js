@@ -1,4 +1,4 @@
-/* Kinolamp 0.2.1 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.0 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.2.1';
+  var VERSION = '0.3.0';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -112,6 +112,87 @@
     return { get: get, save: save, clear: clear, label: label };
   }
 
+  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__back{padding:.3em .65em;border-radius:.4em;background:rgba(255,255,255,.08)}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}.kp-page__back.focus{background:#fff;color:#151515}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}';
+
+  function createNativePages(Lampa, $, navigation, load, activate) {
+    if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) return null;
+    var active = null;
+    $('body').append($('<style></style>').text(PAGE_STYLES));
+    Lampa.Component.add('kinolamp', function (object) {
+      var self = this;
+      var alive = true;
+      var last = false;
+      var labels = [];
+      var view = $('<div class="kp-page"></div>');
+      var head = $('<div class="kp-page__head"></div>');
+      var title = $('<div class="kp-page__title"></div>').text('KinoPub');
+      var back = $('<div class="kp-page__back selector"></div>').text('‹ Назад');
+      var status = $('<div class="kp-page__status" role="status"></div>').text('Загрузка…');
+      var grid = $('<div class="kp-page__grid"></div>');
+      var scroll = new Lampa.Scroll({ mask: true, over: true });
+      back.on('hover:enter', function () { Lampa.Activity.backward(); });
+      head.append(back).append(title);
+      scroll.append(grid);
+      view.append(head).append(status).append(scroll.render());
+      this.create = function () {
+        self.activity.loader(true);
+        load(object, function (error, data) {
+          if (!alive) return;
+          self.activity.loader(false);
+          grid.empty();
+          labels = [];
+          if (error) status.text(error);
+          else {
+            title.text(data.title);
+            status.text(data.rows.length ? 'Выбери материал. Назад — к предыдущей странице.' : 'Ничего не найдено. Вернись назад и выбери другой материал.');
+            data.rows.forEach(function (row) {
+              var card = $('<div class="kp-page__card selector"></div>');
+              var poster = $('<div class="kp-page__poster"></div>');
+              poster.append($('<span class="kp-page__placeholder"></span>').text('▶'));
+              if (httpsURL(row.poster)) {
+                poster.append($('<img loading="lazy" alt="">').attr('src', row.poster).on('error', function () { $(this).remove(); }));
+              }
+              card.append(poster).append($('<div class="kp-page__name"></div>').text(row.title));
+              var meta = $('<div class="kp-page__meta"></div>');
+              card.append(meta);
+              labels.push({ node: meta, row: row });
+              if (!last) last = card[0];
+              card.on('hover:focus', function () { last = card[0]; scroll.update(card, true); });
+              card.on('hover:enter', function () { activate(row); });
+              grid.append(card);
+            });
+          }
+          self.activity.toggle();
+        });
+      };
+      this.start = function () {
+        if (!alive) return;
+        active = self;
+        labels.forEach(function (label) { label.node.text(typeof label.row.subtitle === 'function' ? label.row.subtitle() : label.row.subtitle); });
+        Lampa.Controller.add('content', {
+          toggle: function () { Lampa.Controller.collectionSet(view); Lampa.Controller.collectionFocus(last, view); },
+          up: function () { if (navigation.canmove('up')) navigation.move('up'); else Lampa.Controller.toggle('head'); },
+          down: function () { navigation.move('down'); },
+          right: function () { navigation.move('right'); },
+          left: function () { if (navigation.canmove('left')) navigation.move('left'); else Lampa.Controller.toggle('menu'); },
+          back: function () { Lampa.Activity.backward(); }
+        });
+        Lampa.Controller.toggle('content');
+      };
+      this.render = function () { return view; };
+      this.pause = function () {};
+      this.stop = function () {};
+      this.destroy = function () { alive = false; if (active === self) active = null; scroll.destroy(); view.remove(); };
+    });
+    return {
+      show: function (route) {
+        // Activity history must contain only route data, never DOM nodes, callbacks or API tokens.
+        Lampa.Activity.push({ component: 'kinolamp', title: 'KinoPub', kp_view: route.view, kp_query: route.query, kp_id: route.id, kp_season: route.season });
+      },
+      resume: function () { if (active) active.start(); }
+    };
+  }
+
   // Transport is injected to test OAuth without credentials or real network calls.
   function createClient(storage, transport) {
     var refreshing = false;
@@ -201,6 +282,7 @@
     }
     updateDevice();
     var progress = createProgress(Lampa.Storage);
+    var pages = null;
     var session = null;
     var canTrack = !!(Lampa.Player.listener && Lampa.PlayerVideo && Lampa.PlayerVideo.listener && Lampa.PlayerVideo.to);
     function saveSession(ended) {
@@ -308,6 +390,7 @@
       var query = movie.title || movie.name || movie.original_title || movie.original_name || '';
       if (!query) { notify('Открой карточку фильма или сериала.'); return; }
       authorized(function () {
+        if (pages) { pages.show({ view: 'search', query: query }); return; }
         client.api('/items/search', { q: query }, function (error, json) {
           if (error) { notify(errorMessage(error)); return; }
           var items = json.items || [];
@@ -352,6 +435,7 @@
       });
     }
     function openVideo(item, video, back, context) {
+      if (pages) back = pages.resume;
       var playback = { key: mediaKey(item, video, context), time: 0 };
       function choose(data) {
         var proxy = client.get('proxy_enabled') === true || client.get('proxy_enabled') === 'true';
@@ -424,7 +508,43 @@
       catch (_) { notify('Не удалось запустить плеер Lampa.'); }
     }
 
-    var icon = '<svg viewBox="0 0 64 64" width="48" height="48"><rect width="64" height="64" rx="16" fill="#14232b"/><path d="M22 43v-5a18 18 0 1 1 20 0v5" fill="#7ce8c3"/><path d="m28 15 15 10-15 10Z" fill="#14232b"/><path d="M23 47h18m-15 7h12" fill="none" stroke="#7ce8c3" stroke-width="4" stroke-linecap="round"/></svg>';
+    function pageRows(route, done) {
+      function imageURL(value) { return typeof value === 'string' ? value.replace(/^http:/, 'https:') : ''; }
+      function poster(item) { return imageURL(item.posters && (item.posters.medium || item.posters.big || item.posters.small)); }
+      if (route.kp_view === 'search') {
+        client.api('/items/search', { q: route.kp_query }, function (error, json) {
+          if (error) { done(errorMessage(error)); return; }
+          done(null, { title: 'Результаты: «' + route.kp_query + '»', rows: (json.items || []).map(function (item) {
+            return { title: item.title, subtitle: [item.year, item.type].filter(Boolean).join(' · '), poster: poster(item), next: { view: 'item', id: item.id } };
+          }) });
+        });
+        return;
+      }
+      client.api('/items/' + encodeURIComponent(route.kp_id), { nolinks: 0 }, function (error, json) {
+        if (error || !json.item) { done(errorMessage(error)); return; }
+        var item = json.item;
+        var image = poster(item);
+        if (route.kp_view === 'item' && item.seasons && item.seasons.length) {
+          done(null, { title: item.title, rows: item.seasons.map(function (season, index) {
+            return { title: 'Сезон ' + (season.number || index + 1), subtitle: item.title, poster: image, next: { view: 'season', id: item.id, season: index } };
+          }) });
+          return;
+        }
+        var season = (item.seasons || [])[route.kp_season];
+        var episodes = route.kp_view === 'season';
+        var videos = episodes ? season && season.episodes || [] : item.videos || [];
+        done(null, { title: item.title, rows: videos.map(function (video, index) {
+          var context = { kind: episodes ? 'episode' : 'part', season: episodes ? (season.number === undefined ? Number(route.kp_season) + 1 : season.number) : 0, number: video.number || index + 1 };
+          return { title: video.title || (episodes ? 'Серия ' : 'Видео ') + context.number, subtitle: function () { return progress.label(mediaKey(item, video, context)); }, poster: imageURL(video.thumbnail) || image, item: item, video: video, context: context };
+        }) });
+      });
+    }
+    function activatePageRow(row) {
+      if (row.next) pages.show(row.next);
+      else openVideo(row.item, row.video, pages.resume, row.context);
+    }
+
+    var icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="48" height="48" role="img" aria-label="Kinolamp"><rect x="1" y="1" width="94" height="94" rx="26" fill="#142329" stroke="#2b4249" stroke-width="2"/><path d="M22 8h35C35 8 19 23 15 42V24c0-9 3-13 7-16Z" fill="#fff" opacity=".035"/><path d="M48 18c-13.3 0-24 10.5-24 23.5 0 9 4.7 15.6 11.2 21.2l1.5 3.3h22.6l1.5-3.3C67.3 57.1 72 50.5 72 41.5 72 28.5 61.3 18 48 18Z" fill="#9cebc9"/><path d="M48 18c-13.3 0-24 10.5-24 23.5 0 3.1.6 5.9 1.6 8.4C25.2 34.4 36 23 49.4 23c8.2 0 15.4 3.6 20 9.2C65.7 23.8 57.5 18 48 18Z" fill="#d6ffed"/><path d="M43.7 31.1a2.4 2.4 0 0 0-3.7 2v19.8a2.4 2.4 0 0 0 3.7 2l15-9.9a2.4 2.4 0 0 0 0-4Z" fill="#142329"/><rect x="37" y="71" width="22" height="5" rx="2.5" fill="#9cebc9"/><path d="M41 81h14a7.7 7.7 0 0 1-14 0Z" fill="#68caa7"/><path d="m20 19-4-4m60 4 4-4M48 8V5" fill="none" stroke="#9cebc9" stroke-width="2.5" stroke-linecap="round" opacity=".45"/></svg>';
     Lampa.SettingsApi.addComponent({ component: 'kp_self', name: 'Kinolamp', icon: icon });
     function setting(key, type, name, description, values, initial) {
       Lampa.SettingsApi.addParam({
@@ -464,8 +584,9 @@
       button.on('hover:enter', function () { search(event.data.movie); });
       target.append(button);
     });
+    pages = createNativePages(Lampa, $, root.Navigator, pageRows, activatePageRow);
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
-  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
+  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, createNativePages: createNativePages, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
 });

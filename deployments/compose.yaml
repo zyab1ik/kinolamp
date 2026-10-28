@@ -3,6 +3,8 @@ services:
     build:
       context: ..
       dockerfile: build/package/Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     init: true
     env_file: ../.env
