@@ -1,31 +1,88 @@
-name: Check and test
+name: CI and Deployment
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+# PR updates cancel obsolete checks; running main deployments are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:
-  test:
+  checks:
+    name: Code quality
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
-      - run: make check
-      - run: make coverage
-      - run: make build
-  container:
+      - name: Check formatting, static analysis and JavaScript syntax
+        run: make check
+      - name: Validate GitHub Actions workflow
+        run: make check-ci
+      - name: Test deployment and rollback handling
+        run: make test-deploy
+  go-tests:
+    name: Go tests
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: make docker-build
-      - name: Verify non-root container and health
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Run Go tests and coverage
+        run: make coverage-go
+      - name: Build Go binary
+        run: make build
+  plugin-tests:
+    name: JavaScript tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Run JavaScript tests and coverage
+        run: make coverage-js
+  container:
+    name: Container build and smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build container image
+        run: make docker-build
+      - name: Verify non-root user and container health
         run: |
           test "$(docker image inspect -f '{{.Config.User}}' kinolamp:local)" = 65532:65532
           docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 kinolamp:local
@@ -35,3 +92,122 @@ jobs:
             sleep 1
           done
           exit 1
+      - name: Package verified image for deployment
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          REVISION: ${{ github.sha }}
+        run: |
+          docker tag kinolamp:local "kinolamp:$REVISION"
+          docker save "kinolamp:$REVISION" | gzip -1 > kinolamp-image.tar.gz
+      - name: Upload deployment artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kinolamp-image
+          path: kinolamp-image.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+  deploy:
+    name: Deploy to VPS
+    needs: [checks, go-tests, plugin-tests, container]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: kinolamp-production
+      cancel-in-progress: false
+    outputs:
+      deployed: ${{ steps.latest.outputs.deploy }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Download verified image
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: kinolamp-image
+      - name: Check that this is the latest main commit
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          current=$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ "$current" = "$REVISION" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+            echo 'A newer main commit exists; skipping this outdated deployment.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Transfer image over SSH and verify container health
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          REVISION: ${{ github.sha }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/kinolamp-ssh"
+          key="$RUNNER_TEMP/kinolamp-ssh/key"
+          hosts="$RUNNER_TEMP/kinolamp-ssh/known_hosts"
+          trap 'rm -rf "$RUNNER_TEMP/kinolamp-ssh"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$hosts"
+          ssh -T -p 2223 -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$hosts" -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 debian@eu3.filefor.net "deploy $REVISION" < kinolamp-image.tar.gz
+      - name: Verify public HTTPS endpoints
+        if: steps.latest.outputs.deploy == 'true'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --max-time 15 https://kinolamp.eu3.filefor.net/health
+          curl --fail --silent --show-error --max-time 15 -I https://kinolamp.eu3.filefor.net/kp.js
+          echo '### Deployment complete' >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: \`$GITHUB_SHA\` · [Open Kinolamp](https://kinolamp.eu3.filefor.net/)" >> "$GITHUB_STEP_SUMMARY"
+  summary:
+    name: Pipeline summary
+    if: always()
+    needs: [checks, go-tests, plugin-tests, container, deploy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Write pipeline summary
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          GO: ${{ needs.go-tests.result }}
+          JS: ${{ needs.plugin-tests.result }}
+          DOCKER: ${{ needs.container.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+          DEPLOYED: ${{ needs.deploy.outputs.deployed }}
+          ENABLED: ${{ vars.DEPLOY_ENABLED }}
+        run: |
+          if [ "$DEPLOY" = success ] && [ "$DEPLOYED" != true ]; then
+            DEPLOY='skipped (a newer main commit exists)'
+          fi
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] || [ "$GITHUB_REF" != refs/heads/main ]; then
+            DEPLOY='skipped (pull request or non-main branch)'
+          elif [ "$ENABLED" != true ]; then
+            DEPLOY='skipped (SSH deployment is not enabled)'
+          fi
+          status() {
+            case "$1" in
+              success) echo '✅ Passed' ;;
+              failure) echo '❌ Failed' ;;
+              cancelled) echo '⏹ Cancelled' ;;
+              *) echo "⏭ $1" ;;
+            esac
+          }
+          {
+            echo '## Kinolamp pipeline results'
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo ''
+            echo '| Stage | Result |'
+            echo '| --- | --- |'
+            echo "| Code quality and deployment tests | $(status "$CHECKS") |"
+            echo "| Go tests, race detector, 100% statement coverage required | $(status "$GO") |"
+            echo "| JavaScript: 100% line, branch and function coverage required | $(status "$JS") |"
+            echo "| Container build, non-root user and health check | $(status "$DOCKER") |"
+            echo "| VPS deployment and public HTTPS check | $(status "$DEPLOY") |"
+            echo ''
+            echo 'Deployment runs only from main after every check passes. Pull requests never deploy.'
+            echo '[Open site](https://kinolamp.eu3.filefor.net/)'
+          } >> "$GITHUB_STEP_SUMMARY"

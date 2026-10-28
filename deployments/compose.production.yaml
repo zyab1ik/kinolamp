@@ -1,0 +1,20 @@
+# Installed on the VPS as /etc/kinolamp/compose.yaml.
+services:
+  kinolamp:
+    image: ${KINOLAMP_IMAGE:?Set the verified Kinolamp image}
+    restart: unless-stopped
+    init: true
+    env_file: ${KINOLAMP_ENV_FILE:?Set the server environment file}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:8788:3000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
