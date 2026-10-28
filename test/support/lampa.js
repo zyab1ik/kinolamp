@@ -12,7 +12,7 @@ function video(overrides = {}) {
   return { id: 77, title: 'Part 1', audios: [{ index: 1, lang: 'rus', type: { short_title: 'MVO' }, author: { title: 'Studio' }, codec: 'aac' }], files: [{ quality: '1080p', url: { hls2: 'https://edge.cdn.example/hls2/master', hls4: 'https://edge.cdn.example/hls4/master' } }, { quality: '720p', urls: { hls2: 'https://edge.cdn.example/720/master', hls4: 'https://edge.cdn.example/hls4/720' } }], subtitles: [{ lang: 'eng', url: 'https://edge.cdn.example/en.srt' }], ...overrides };
 }
 function harness(options = {}) {
-  const h = { nodes: [], settings: [], notices: [], requests: [], menus: [], toggles: [], plays: [], closes: 0, callbacks: [], listeners: {}, storage: clientStore(options.storage) };
+  const h = { nodes: [], settings: [], notices: [], requests: [], deviceRequests: [], menus: [], toggles: [], plays: [], closes: 0, callbacks: [], listeners: {}, storage: clientStore(options.storage) };
   h.$ = function (input) {
     const n = { input, length: 1, children: [], handlers: {}, value: '',
       append(node) { this.children.push(node); return this; },
@@ -23,7 +23,7 @@ function harness(options = {}) {
       find(selector) {
         const found = h.$(selector);
         if (selector === '.kp-self-button') found.length = options.duplicate ? 1 : 0;
-        if (selector.includes('.full-start-new__buttons')) found.length = options.noContainer ? 0 : 1;
+        if (selector === '.buttons--container') found.length = options.noContainer ? 0 : 1;
         return found;
       }
     };
@@ -46,10 +46,17 @@ function harness(options = {}) {
   h.playerEvents = events(); h.videoEvents = events(); h.seeks = [];
   h.Lampa = {
     Storage: h.storage,
+    Platform: { get() { return options.platform || ''; } },
     Reguest: function () {
       this.timeout = function (value) { assert.equal(value, 15000); };
       this.silent = function (url, success, error, body, params) {
         const req = { url, body, headers: params.headers, success, error };
+        if (url.endsWith('/device/notify')) {
+          h.deviceRequests.push(req);
+          if (options.deviceNotifyFailure) error({ status: 503, responseText: '{}' });
+          else success({ status: 200 });
+          return;
+        }
         h.requests.push(req);
         const result = h.respond(req);
         if (result && result.defer) { h.callbacks.push(req); return; }
@@ -58,7 +65,7 @@ function harness(options = {}) {
       };
     },
     SettingsApi: { addComponent(c) { h.component = c; }, addParam(p) { h.settings.push(p); } },
-    Select: { show(menu) { h.current = menu; h.menus.push(menu); }, close() { h.closes++; } },
+    Select: { show(menu) { h.current = menu; h.menus.push(menu); }, close() { h.closes++; h.current.onBack(); } },
     Controller: { enabled() { return options.noController ? null : { name: 'full' }; }, toggle(name) { h.toggles.push(name); } },
     Noty: { show(message) { h.notices.push(message); } },
     Modal: { open(modal) { h.modal = modal; }, close() { h.modalClosed = (h.modalClosed || 0) + 1; } },
@@ -67,6 +74,8 @@ function harness(options = {}) {
     PlayerVideo: { listener: h.videoEvents, to(time) { h.seeks.push(time); } },
     Player: { listener: h.playerEvents, play(work) { if (options.playerThrows) throw new Error('player failure'); h.playerEvents.emit('create', { data: work }); h.plays.push(work); h.playerEvents.emit('start', work); }, playlist(entries) { h.playlist = entries; } }
   };
+  if (options.noPlatform) delete h.Lampa.Platform;
+  if (options.noPlatformGet) h.Lampa.Platform = {};
   if (options.noTracking) delete h.Lampa.PlayerVideo;
   if (options.noPlayerListener) delete h.Lampa.Player.listener;
   if (options.noManifest) delete h.Lampa.Manifest;
@@ -75,7 +84,7 @@ function harness(options = {}) {
   h.mount = (movie = { title: 'Film' }, extra = {}) => h.listeners.full({ type: 'complite', data: { movie }, object: { activity: { render() { return h.holder; } } }, ...extra });
   h.click = (movie) => { h.mount(movie); const button = h.nodes.find(n => typeof n.input === 'string' && n.input.includes('kp-self-button') && n.handlers['hover:enter']); if (button) button.handlers['hover:enter'](); };
   h.select = (index = 0) => h.current.onSelect(h.current.items[index]);
-  h.back = () => h.current.onBack();
+  h.back = () => h.Lampa.Select.close();
   return h;
 }
 

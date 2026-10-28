@@ -45,3 +45,14 @@ docs/                       документация приложения
 `make coverage` проверяет весь модуль через `go test -race ./...` и весь
 `web/static/kp.js`: пороги 100% statements для Go и 100% lines/branches/functions
 для JavaScript. Исполняемых файлов или пакетов, исключённых из покрытия, нет.
+
+
+## Native Watch source and menu lifecycle
+
+KinoPub is registered as a source in Lampa's hidden `.buttons--container`. The standard Watch button groups these sources; the plugin does not replace its handlers or add a separate toolbar action. Builds without the native source container show an update message.
+
+Lampa hides Select before calling onSelect, and Select.close itself invokes onBack. Kinolamp must not call close in either callback: doing so in onBack recursively re-enters close. Tests model this native close contract rather than a no-op close stub.
+
+## Device description
+
+An authenticated client posts title, coarse Lampa platform and plugin version to `/v1/device/notify` after login and on startup. This updates the current device, preserving the existing account slot and token. No hardware ID, serial number, MAC address or full user agent is collected. Existing HTTP authentication refresh/race handling also applies to this POST; failures do not block playback. No account device is removed.

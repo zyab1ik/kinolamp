@@ -1,4 +1,4 @@
-/* Kinolamp 0.2.0 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.2.1 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.2.0';
+  var VERSION = '0.2.1';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -146,17 +146,19 @@
         callbacks.forEach(function (cb) { cb(error); });
       });
     }
-    function api(path, params, done, retried) {
+    function api(path, params, done, retried, post) {
       if (!get('access')) { done({ code: 'login_required' }); return; }
       var expected = generation;
       var query = form(params || {});
-      transport('GET', API + '/v1' + path + (query ? '?' + query : ''), null,
-        { Authorization: 'Bearer ' + get('access') }, function (error, json) {
+      var headers = { Authorization: 'Bearer ' + get('access') };
+      if (post) headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      transport(post ? 'POST' : 'GET', API + '/v1' + path + (!post && query ? '?' + query : ''), post ? query : null,
+        headers, function (error, json) {
           if (generation !== expected) { done({ code: 'session_changed' }); return; }
           if (error && error.status === 401 && !retried) {
             refresh(function (refreshError) {
               if (refreshError) done(refreshError);
-              else api(path, params, done, true);
+              else api(path, params, done, true, post);
             });
           } else done(error, json);
         });
@@ -165,7 +167,8 @@
       get: get, set: set, api: api, oauth: oauth, logout: logout,
       hasToken: function () { return !!get('access'); },
       generation: function () { return generation; },
-      saveTokens: save
+      saveTokens: save,
+      notifyDevice: function (info, done) { api('/device/notify', info, done, false, true); }
     };
   }
 
@@ -191,6 +194,12 @@
       }, method === 'POST' ? body : false, { headers: headers });
     }
     var client = createClient(Lampa.Storage, transport);
+    function updateDevice() {
+      if (!client.hasToken()) return;
+      var platform = Lampa.Platform && typeof Lampa.Platform.get === 'function' ? Lampa.Platform.get() : '';
+      client.notifyDevice({ title: 'Kinolamp / Lampa', hardware: String(platform || 'Lampa'), software: 'Kinolamp ' + VERSION }, function () {});
+    }
+    updateDevice();
     var progress = createProgress(Lampa.Storage);
     var session = null;
     var canTrack = !!(Lampa.Player.listener && Lampa.PlayerVideo && Lampa.PlayerVideo.listener && Lampa.PlayerVideo.to);
@@ -234,8 +243,9 @@
         items: entries.map(function (entry) {
           return { title: escapeText(entry.title), subtitle: escapeText(entry.subtitle || ''), run: entry.run };
         }),
-        onSelect: function (item) { Lampa.Select.close(); item.run(); },
-        onBack: function () { Lampa.Select.close(); if (back) back(); else restore(previous); }
+        // Native Select hides before onSelect, and close() itself invokes onBack.
+        onSelect: function (item) { item.run(); },
+        onBack: function () { if (back) back(); else restore(previous); }
       });
     }
     function errorMessage(error) {
@@ -277,6 +287,7 @@
           client.oauth('/oauth2/device', { grant_type: 'device_token', code: json.code }, function (error, token) {
             if (state.cancelled) return;
             if (!error && client.saveTokens(token, state.generation)) {
+              updateDevice();
               close(); notify('KinoPub: вход выполнен.'); if (done) done(); return;
             }
             if (error && (error.code === 'authorization_pending' || error.code === 'slow_down')) {
@@ -443,12 +454,12 @@
       if (!event || event.type !== 'complite' || !event.data || !event.data.movie) return;
       var holder = event.object && event.object.activity && event.object.activity.render();
       if (!holder || holder.find('.kp-self-button').length) return;
-      var button = $('<div class="full-start__button selector kp-self-button"></div>');
-      button.append($(icon)).append($('<span></span>').text('Kinolamp'));
+      var target = holder.find('.buttons--container').first();
+      if (!target.length) { notify('Не удалось подключить KinoPub к кнопке «Смотреть». Обнови Lampa.'); return; }
+      var button = $('<div class="full-start__button kp-self-button"></div>');
+      button.append($(icon)).append($('<span></span>').text('KinoPub'));
       button.on('hover:enter', function () { search(event.data.movie); });
-      var target = holder.find('.full-start-new__buttons, .full-start__buttons').first();
-      if (target.length) target.append(button);
-      else holder.find('.full-start__button').first().after(button);
+      target.append(button);
     });
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
