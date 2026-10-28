@@ -18,6 +18,7 @@ function harness(options = {}) {
     const n = { input, mockNode: true, length: 1, children: [], handlers: {}, value: '',
       empty() { this.children = []; return this; },
       remove() { this.removed = true; return this; },
+      hide() { this.hidden = true; return this; }, removeClass(name) { this.removedClass = name; return this; },
       append(node) { this.children.push(node); return this; },
       attr(name, value) { (this.attributes ||= {})[name] = value; return this; },
       text(value) { this.value = value; return this; },
@@ -67,6 +68,8 @@ function harness(options = {}) {
         else success(result);
       };
     },
+    Template: { add(name, html) { h.templates ||= {}; h.templates[name] = html; } },
+    Settings: { update() { h.settingsUpdates = (h.settingsUpdates || 0) + 1; }, create(name, params) { h.settingsPage = name; h.settingsParams = params; } },
     SettingsApi: { addComponent(c) { h.component = c; }, addParam(p) { h.settings.push(p); } },
     Select: { show(menu) { h.current = menu; h.menus.push(menu); }, close() { h.closes++; h.current.onBack(); } },
     Controller: { enabled() { return options.noController ? null : { name: options.native ? h.controllerName || 'full' : 'full' }; }, add(name, handlers) { h.controllers[name] = handlers; }, toggle(name) { h.controllerName = name; h.toggles.push(name); if (h.controllers[name]) h.controllers[name].toggle(); }, collectionSet(view) { h.collection = view; }, collectionFocus(last) { h.focus = last; } },
