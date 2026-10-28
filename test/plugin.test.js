@@ -263,3 +263,23 @@ test('extension metadata names only its own unnamed entry and preserves custom n
   for (const current of [{}, { document: {} }, { document: { currentScript: {} } }]) plugin.nameExtension(Lampa, current);
   for (const api of [{}, { Plugins: {} }, { Plugins: { get() { return []; } } }]) plugin.nameExtension(api, root);
 });
+
+
+test('empty input settings provide a real Lampa placeholder without storing it as credentials', () => {
+  const h = harness({ storage: { kp_self_client_id: '', kp_self_client_secret: '' } });
+  const inputs = h.settings.filter(entry => entry.param.type === 'input');
+  assert.equal(inputs.length, 4);
+  for (const entry of inputs) {
+    // Lampa interpolates param.placeholder into the DOM, then uses it for an empty value.
+    const placeholder = String(entry.param.placeholder);
+    const stored = h.storage.get(entry.param.name, entry.param.default);
+    const display = stored || placeholder;
+    assert.equal(placeholder, 'Не задано');
+    assert.equal(display, 'Не задано');
+    assert.equal(stored, '');
+  }
+  h.action('login');
+  assert.equal(h.requests.length, 0);
+  assert.match(h.notices.at(-1), /support@kino.pub/);
+  assert.match(h.notices.at(-1), /Затем.*код активации/);
+});

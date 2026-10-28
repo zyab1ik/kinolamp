@@ -237,7 +237,7 @@
       });
     }
     function errorMessage(error) {
-      if (error && error.code === 'client_missing') return 'Укажи OAuth Client ID и Client Secret в Настройки → Kinolamp.';
+      if (error && error.code === 'client_missing') return 'Сначала получи Client ID и Client Secret приложения у support@kino.pub и введи их в Настройки → Kinolamp. Затем здесь появится код активации устройства.';
       if (error && (error.code === 'login_required' || error.status === 401)) return 'Нужна авторизация: Настройки → Kinolamp → Войти.';
       return 'Запрос не выполнен. Проверь сеть, подписку и настройки. Подробные данные не отправляются в логи.';
     }
@@ -409,7 +409,7 @@
     function setting(key, type, name, description, values, initial) {
       Lampa.SettingsApi.addParam({
         component: 'kp_self',
-        param: { name: PREFIX + key, type: type, values: values || '', 'default': initial === undefined ? '' : initial },
+        param: { name: PREFIX + key, type: type, placeholder: 'Не задано', values: values || '', 'default': initial === undefined ? '' : initial },
         field: { name: name, description: description }
       });
     }
