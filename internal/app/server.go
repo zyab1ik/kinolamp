@@ -1,64 +1,21 @@
-package main
+package app
 
 import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
-	"embed"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/zyab1ik/kinolamp/web"
 )
-
-//go:embed public/kp.js public/index.html
-var assets embed.FS
-
-type config struct {
-	proxy          bool
-	token          string
-	hosts, origins []string
-	base           string
-}
-
-func loadConfig(getenv func(string) string) (config, error) {
-	c := config{proxy: getenv("ENABLE_PROXY") == "true", token: getenv("PROXY_TOKEN"), base: getenv("PUBLIC_BASE_URL")}
-	var err error
-	c.hosts, err = parseHosts(getenv("CDN_HOSTS"))
-	if err != nil {
-		return c, err
-	}
-	for _, raw := range strings.Split(getenv("ALLOWED_ORIGINS"), ",") {
-		origin := strings.TrimSpace(raw)
-		if origin == "" {
-			continue
-		}
-		if origin != "null" {
-			u, err := url.Parse(origin)
-			if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil || u.String() != u.Scheme+"://"+u.Host {
-				return c, errors.New("invalid ALLOWED_ORIGINS")
-			}
-		}
-		c.origins = append(c.origins, origin)
-	}
-	if c.proxy {
-		if len(c.token) < 32 || len(c.hosts) == 0 {
-			return c, errors.New("proxy requires PROXY_TOKEN of 32+ characters and CDN_HOSTS")
-		}
-		u, err := url.Parse(c.base)
-		if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.String() != "https://"+u.Host {
-			return c, errors.New("PUBLIC_BASE_URL must be an HTTPS origin")
-		}
-	}
-	return c, nil
-}
 
 type ticket struct {
 	manifest string
@@ -123,11 +80,11 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.URL.Path == "/" || r.URL.Path == "/kp.js" {
-			name, contentType := "public/kp.js", "application/javascript; charset=utf-8"
+			name, contentType := "static/kp.js", "application/javascript; charset=utf-8"
 			if r.URL.Path == "/" {
-				name, contentType = "public/index.html", "text/html; charset=utf-8"
+				name, contentType = "static/index.html", "text/html; charset=utf-8"
 			}
-			body, _ := assets.ReadFile(name) // Embedded at compile time; names are constants.
+			body, _ := web.Files.ReadFile(name) // Embedded at compile time; names are constants.
 			w.Header().Set("Content-Type", contentType)
 			_, _ = w.Write(body)
 			return

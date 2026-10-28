@@ -1,10 +1,10 @@
-/* Lampa KinoPub Selfhosted 0.1.0 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.1.0 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
   if (typeof module === 'object' && module.exports) module.exports = plugin;
-  else if (root.Lampa && !root.kpSelfhostedInstalled) {
-    root.kpSelfhostedInstalled = true;
+  else if (root.Lampa && !root.kinolampInstalled) {
+    root.kinolampInstalled = true;
     plugin.install(root.Lampa, root.jQuery || root.$, root);
   }
 })(typeof window !== 'undefined' ? window : this, function () {
@@ -148,8 +148,8 @@
       });
     }
     function errorMessage(error) {
-      if (error && error.code === 'client_missing') return 'Укажи OAuth Client ID и Client Secret в Настройки → KinoPub Selfhosted.';
-      if (error && (error.code === 'login_required' || error.status === 401)) return 'Нужна авторизация: Настройки → KinoPub Selfhosted → Войти.';
+      if (error && error.code === 'client_missing') return 'Укажи OAuth Client ID и Client Secret в Настройки → Kinolamp.';
+      if (error && (error.code === 'login_required' || error.status === 401)) return 'Нужна авторизация: Настройки → Kinolamp → Войти.';
       return 'Запрос не выполнен. Проверь сеть, подписку и настройки. Подробные данные не отправляются в логи.';
     }
     function stopLogin() {
@@ -175,7 +175,7 @@
         content.append($('<h1></h1>').text(String(json.user_code)));
         content.append($('<p></p>').text('Назад — отменить. Пароль остаётся на сайте KinoPub.'));
         function close() { stopLogin(); Lampa.Modal.close(); restore(previous); }
-        Lampa.Modal.open({ title: 'KinoPub Selfhosted', html: content, size: 'small', onBack: close });
+        Lampa.Modal.open({ title: 'Kinolamp', html: content, size: 'small', onBack: close });
         function poll() {
           if (state.cancelled) return;
           if (Date.now() >= expires) { close(); notify('Код истёк. Запусти вход ещё раз.'); return; }
@@ -294,7 +294,7 @@
     }
 
     var icon = '<svg viewBox="0 0 64 64" width="48" height="48"><path d="M20 12L52 32L20 52Z" fill="currentColor"/></svg>';
-    Lampa.SettingsApi.addComponent({ component: 'kp_self', name: 'KinoPub Selfhosted', icon: icon });
+    Lampa.SettingsApi.addComponent({ component: 'kp_self', name: 'Kinolamp', icon: icon });
     function setting(key, type, name, description, values, initial) {
       Lampa.SettingsApi.addParam({
         component: 'kp_self',
@@ -317,20 +317,20 @@
       client.logout(); notify('Локальная сессия удалена. Отзыв устройства доступен на kino.pub.');
     });
     action('privacy', 'О плагине и приватности', function () {
-      notify('Selfhosted ' + VERSION + ': без телеметрии и облачной синхронизации. Токены на устройстве. HLS-прокси получает только ссылку на поток.');
+      notify('Kinolamp ' + VERSION + ': без телеметрии и облачной синхронизации. Токены на устройстве. HLS-прокси получает только ссылку на поток.');
     });
     Lampa.Listener.follow('full', function (event) {
       if (!event || event.type !== 'complite' || !event.data || !event.data.movie) return;
       var holder = event.object && event.object.activity && event.object.activity.render();
       if (!holder || holder.find('.kp-self-button').length) return;
       var button = $('<div class="full-start__button selector kp-self-button"></div>');
-      button.append($(icon)).append($('<span></span>').text('KinoPub · свой сервер'));
+      button.append($(icon)).append($('<span></span>').text('Kinolamp'));
       button.on('hover:enter', function () { search(event.data.movie); });
       var target = holder.find('.full-start-new__buttons, .full-start__buttons').first();
       if (target.length) target.append(button);
       else holder.find('.full-start__button').first().after(button);
     });
-    if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'KinoPub Selfhosted', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
+    if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
   return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle };

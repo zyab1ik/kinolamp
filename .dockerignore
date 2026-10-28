@@ -1,6 +1,11 @@
 **
 !go.mod
-!*.go
-!public/
-!public/**
-*_test.go
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!web/
+!web/**
+**/*_test.go
+**/.env
+**/.env.*

@@ -1,7 +1,16 @@
-# KinoPub Selfhosted для Lampa
+# Kinolamp для Lampa
 
 Личный JavaScript-плагин KinoPub для Lampa и Go-сервер для своего VPS. Один Go-бинарник со встроенными `kp.js` и страницей установки; Node.js в production не нужен. Версия 0.1.0.
 Новая реализация: код и ресурсы из `mainsync-afk/lampa_kinopub` не копировались.
+
+## Структура проекта
+
+Применены каталоги из [golang-standards/project-layout](https://github.com/golang-standards/project-layout):
+`cmd/kinolamp` — точка входа; `internal/app` — сервер, конфигурация и HLS;
+`web/static` — плагин и страница установки; `configs` — шаблоны настроек;
+`build/package` — Dockerfile; `deployments` — Compose и Caddy;
+`test` — проверки JavaScript; `docs` — документация.
+Подробности и границы пакетов — [docs/architecture.md](docs/architecture.md).
 
 ## Возможности
 
@@ -20,27 +29,33 @@
 Требования: Docker Compose на VPS, домен с DNS на VPS, HTTPS reverse proxy.
 
 ```sh
-git clone git@github.com:zyab1ik/lampa-kinopub-selfhosted.git
-cd lampa-kinopub-selfhosted
-cp .env.example .env
+git clone git@github.com:zyab1ik/kinolamp.git
+cd kinolamp
+cp configs/kinolamp.env.example .env
 make up
 make health
 ```
 
 Размести reverse proxy на `https://lampa.example.com` → `127.0.0.1:8788`.
-Пример для установленного на хосте Caddy — [deploy/Caddyfile](deploy/Caddyfile).
+Пример для установленного на хосте Caddy — [deployments/Caddyfile](deployments/Caddyfile).
 Измени пример домена на свой; Caddy получит TLS-сертификат. HTTPS нужен и между внешним reverse proxy и origin, если они на разных серверах. Не включай кеширование или access/error-логи с полными HLS ticket URL.
 
+Если домен подключается через внешнюю панель хостинга, укажи в панели **VPS port 8788**
+и выставь `BIND_ADDRESS=0.0.0.0` в локальном `.env`: шлюз панели не сможет обратиться
+к loopback-интерфейсу VPS. Порт контейнера остаётся `3000`. Дополнительный публичный
+TCP-проброс не требуется, если панель сама предоставляет HTTPS-домен. Проверяй
+HTTPS на стороне панели; отдельное шифрование до origin зависит от сети провайдера.
+
 Без Docker: Go 1.27+, `make run`; по умолчанию слушает только `127.0.0.1:3000`.
-`make build` создаёт `bin/lampa-kinopub` со встроенными ресурсами. Параметр `LISTEN_ADDR` меняет адрес прослушивания. Для запуска без Docker переменные из `.env` необходимо передать процессу самостоятельно. Node.js 24+ требуется только для тестов JavaScript. Зависимостей Go/npm нет.
+`make build` создаёт `bin/kinolamp` со встроенными ресурсами. Параметр `LISTEN_ADDR` меняет адрес прослушивания. Для запуска без Docker переменные из `.env` необходимо передать процессу самостоятельно. Node.js 24+ требуется только для тестов JavaScript. Зависимостей Go/npm нет.
 
 ## Установка на устройство
 
 1. В Lampa открой Настройки → Расширения → Добавить и вставь `https://lampa.example.com/kp.js`.
-2. Перезапусти Lampa. Открой Настройки → KinoPub Selfhosted.
+2. Перезапусти Lampa. Открой Настройки → Kinolamp.
 3. Укажи **Client ID и Client Secret приложения KinoPub**, а не пароль аккаунта. Для получения собственного OAuth-клиента документация предлагает обратиться в `support@kino.pub`. Учётные данные клиента не включены в Git и не генерируются этим сервером.
 4. Нажми «Войти в KinoPub» и введи показанный код на `https://kino.pub/device`.
-5. Открой карточку фильма/сериала и кнопку «KinoPub · свой сервер».
+5. Открой карточку фильма/сериала и кнопку «Kinolamp».
 
 Нужна действующая подписка и разрешённый доступ к KinoPub. Если конкретная браузерная сборка Lampa блокирует прямой API из-за CORS, эта версия не обходит ограничение публичным CORS-прокси. Проверяй на используемом клиенте; универсальная совместимость не заявляется.
 
@@ -77,7 +92,7 @@ git pull --ff-only
 make up
 ```
 
-GitHub Actions запускает `make check`, `make coverage`, `make build`, а также сборку/read-only запуск Docker. `make coverage` требует 100% statement coverage всего Go-кода, включая точку входа, и 100% lines/branches/functions всего `public/kp.js`; исключений или ignore-директив нет. Проверка Go читает непокрытые блоки напрямую и не полагается на округлённый процент. Тесты проверяют OAuth, конкурентное обновление токенов, отмену входа, отказ от SSRF, фиксацию DNS, лимиты upstream, защиту API, ticket и выбор HLS-дорожек. Интеграционные проверки Lampa используют совместимый mock API; реальное устройство и подписка нужны для финального playback-теста. Плагин не проходил проверку на физическом телевизоре при создании репозитория.
+GitHub Actions запускает `make check`, `make coverage`, `make build`, а также сборку/read-only запуск Docker. `make coverage` требует 100% statement coverage всего Go-кода, включая точку входа, и 100% lines/branches/functions всего `web/static/kp.js`; исключений или ignore-директив нет. Проверка Go читает непокрытые блоки напрямую и не полагается на округлённый процент. Тесты проверяют OAuth, конкурентное обновление токенов, отмену входа, отказ от SSRF, фиксацию DNS, лимиты upstream, защиту API, ticket и выбор HLS-дорожек. Интеграционные проверки Lampa используют совместимый mock API; реальное устройство и подписка нужны для финального playback-теста. Плагин не проходил проверку на физическом телевизоре при создании репозитория.
 
 ## Безопасность и приватность
 
@@ -85,6 +100,7 @@ GitHub Actions запускает `make check`, `make coverage`, `make build`, �
 - «Выйти» удаляет локальные access/refresh-токены, но не отзывает устройство на стороне KinoPub. Для отзыва используй управление устройствами на kino.pub.
 - Не включай глобальную отладку HTTP/заголовков на клиенте и VPS. Сервер приложения не пишет request URL, тела или токены.
 - Compose запускает процесс не от root, с read-only filesystem, без capabilities и с локальным bind порта. Не публикуй порт контейнера напрямую.
+- Для внешнего шлюза панели `BIND_ADDRESS=0.0.0.0` открывает 8788 на интерфейсах VPS: не создавай для него дополнительный публичный TCP-проброс, если доступ уже идёт через HTTPS-домен панели.
 - OAuth-клиент настроен на устройстве. Client Secret в приложении не может считаться тайной от владельца устройства; личные refresh-токены публиковать нельзя.
 - Зависимостей Go/npm нет. Базовый Docker-образ имеет плавающий тег: для воспроизводимого production-релиза закрепи проверенный image digest и регулярно обновляй его.
 

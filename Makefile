@@ -1,16 +1,17 @@
 SHELL := /bin/sh
+COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
 .PHONY: help check fmt test test-go test-js coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 check: ## Check Go formatting, vet and plugin syntax
-	@test -z "$$(gofmt -l *.go)" || { echo 'Run make fmt'; exit 1; }
+	@test -z "$$(gofmt -l cmd internal web)" || { echo 'Run make fmt'; exit 1; }
 	go vet ./...
-	node --check public/kp.js
+	node --check web/static/kp.js
 
 fmt: ## Format Go source files
-	gofmt -w *.go
+	gofmt -w cmd internal web
 
 test: test-go test-js ## Run server and plugin tests
 
@@ -29,26 +30,26 @@ coverage-go: ## Require exactly 100% Go statement coverage, with race detector
 	@awk 'NR > 1 && $$2 > 0 && $$3 == 0 {missing++} END {if (missing) {print "FAIL: " missing " uncovered Go statement blocks"; exit 1}}' coverage/go.out
 
 coverage-js: ## Require 100% JavaScript lines, branches and functions
-	node --experimental-test-coverage --test-coverage-include=public/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js
+	node --experimental-test-coverage --test-coverage-include=web/static/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js
 
 build: ## Build a standalone Go binary containing the plugin assets
 	@mkdir -p bin
-	CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/lampa-kinopub .
+	CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/kinolamp ./cmd/kinolamp
 
 run: ## Run locally using the current environment variables
-	go run .
+	go run ./cmd/kinolamp
 
 docker-build: ## Build production Docker image
-	docker build -t lampa-kinopub:local .
+	docker build -f build/package/Dockerfile -t kinolamp:local .
 
 up: ## Build and start the VPS service
-	docker compose up -d --build
+	$(COMPOSE) up -d --build
 
 down: ## Stop the VPS service
-	docker compose down
+	$(COMPOSE) down
 
 logs: ## Follow application logs
-	docker compose logs -f --tail=50
+	$(COMPOSE) logs -f --tail=50
 
 health: ## Check local container health
 	curl --fail --silent --show-error http://127.0.0.1:8788/health

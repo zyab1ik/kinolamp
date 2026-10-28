@@ -1,5 +1,5 @@
 {
-  "name": "lampa-kinopub-selfhosted",
+  "name": "kinolamp",
   "version": "0.1.0",
   "private": true,
   "description": "Personal Lampa KinoPub plugin and optional authenticated HLS reducer",
@@ -7,6 +7,6 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check public/kp.js"
+    "check": "node --check web/static/kp.js"
   }
 }

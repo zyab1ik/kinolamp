@@ -26,8 +26,8 @@ jobs:
       - run: make docker-build
       - name: Verify non-root container and health
         run: |
-          test "$(docker image inspect -f '{{.Config.User}}' lampa-kinopub:local)" = 65532:65532
-          docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 lampa-kinopub:local
+          test "$(docker image inspect -f '{{.Config.User}}' kinolamp:local)" = 65532:65532
+          docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 kinolamp:local
           trap 'docker rm -f kp' EXIT
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:8788/health; then exit 0; fi

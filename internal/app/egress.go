@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -125,7 +125,7 @@ func fetchMaster(ctx context.Context, client *http.Client, target *url.URL) (str
 		return "", err
 	}
 	req.Header.Set("Accept", "application/vnd.apple.mpegurl, text/plain")
-	req.Header.Set("User-Agent", "Lampa-KinoPub-Selfhosted/0.1")
+	req.Header.Set("User-Agent", "Kinolamp/0.1")
 	response, err := client.Do(req)
 	if err != nil {
 		return "", err

@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const plugin = require('../public/kp');
-const filename = path.resolve(__dirname, '../public/kp.js');
+const plugin = require('../web/static/kp');
+const filename = path.resolve(__dirname, '../web/static/kp.js');
 const source = fs.readFileSync(filename, 'utf8');
 
 function store(values = {}) {
@@ -313,7 +313,7 @@ test('mounting guards, duplicate install guard and browser wrapper', () => {
   assert.equal(h.nodes.some(n => n.handlers['hover:enter']), false);
   vm.runInNewContext(source, {}, { filename });
   vm.runInNewContext(source, { window: {} }, { filename });
-  vm.runInNewContext(source, { window: { Lampa: {}, kpSelfhostedInstalled: true } }, { filename });
-  const w = { Lampa: {}, jQuery() {} }; vm.runInNewContext(source, { window: w }, { filename }); assert.equal(w.kpSelfhostedInstalled, true);
+  vm.runInNewContext(source, { window: { Lampa: {}, kinolampInstalled: true } }, { filename });
+  const w = { Lampa: {}, jQuery() {} }; vm.runInNewContext(source, { window: w }, { filename }); assert.equal(w.kinolampInstalled, true);
   vm.runInNewContext(source, { window: { Lampa: {}, $() {} } }, { filename });
 });

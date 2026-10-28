@@ -1,11 +1,13 @@
 services:
-  lampa-kinopub:
-    build: .
+  kinolamp:
+    build:
+      context: ..
+      dockerfile: build/package/Dockerfile
     restart: unless-stopped
     init: true
-    env_file: .env
+    env_file: ../.env
     ports:
-      - "127.0.0.1:8788:3000"
+      - "${BIND_ADDRESS:-127.0.0.1}:8788:3000"
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

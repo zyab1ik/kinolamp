@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -12,12 +12,8 @@ import (
 	"time"
 )
 
-// Small process boundary kept injectable so startup/shutdown paths can be tested.
-var exitProcess = os.Exit
-
-func main() { exitProcess(run(os.Getenv, os.Stderr, serveHTTP)) }
-
-func run(getenv func(string) string, output io.Writer, serve func(*http.Server) error) int {
+// Run configures the HTTP service and returns its process exit status.
+func Run(getenv func(string) string, output io.Writer, serve func(*http.Server) error) int {
 	c, err := loadConfig(getenv)
 	if err != nil {
 		_, _ = fmt.Fprintln(output, "Invalid configuration:", err)
@@ -37,7 +33,8 @@ func run(getenv func(string) string, output io.Writer, serve func(*http.Server) 
 	return 0
 }
 
-func serveHTTP(server *http.Server) error {
+// ServeHTTP serves requests until interrupted and shuts down gracefully.
+func ServeHTTP(server *http.Server) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	return serveWithContext(ctx, server)

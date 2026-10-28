@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bytes"
@@ -178,7 +178,7 @@ func TestHLSSelectionAndInjection(t *testing.T) {
 	}
 }
 
-func TestConfigAndProcess(t *testing.T) {
+func TestConfigAndRuntime(t *testing.T) {
 	get := func(values map[string]string) func(string) string {
 		return func(key string) string { return values[key] }
 	}
@@ -195,22 +195,17 @@ func TestConfigAndProcess(t *testing.T) {
 		require(t, err != nil, "invalid config accepted")
 	}
 	var output bytes.Buffer
-	require(t, run(get(map[string]string{"CDN_HOSTS": "*"}), &output, nil) == 1, "invalid startup must fail")
-	require(t, run(get(nil), &output, func(server *http.Server) error {
+	require(t, Run(get(map[string]string{"CDN_HOSTS": "*"}), &output, nil) == 1, "invalid startup must fail")
+	require(t, Run(get(nil), &output, func(server *http.Server) error {
 		require(t, server.Addr == "127.0.0.1:3000" && server.ReadTimeout > 0, "default bind/timeout wrong")
 		return http.ErrServerClosed
 	}) == 0, "normal shutdown must succeed")
-	require(t, run(get(map[string]string{"LISTEN_ADDR": "localhost:9999"}), &output, func(server *http.Server) error {
+	require(t, Run(get(map[string]string{"LISTEN_ADDR": "localhost:9999"}), &output, func(server *http.Server) error {
 		require(t, server.Addr == "localhost:9999", "custom bind ignored")
 		return errors.New("sensitive underlying error")
 	}) == 1 && !strings.Contains(output.String(), "sensitive"), "startup errors leak details")
-	require(t, run(get(nil), &output, func(*http.Server) error { return nil }) == 0, "nil result failed")
-	oldExit := exitProcess
-	defer func() { exitProcess = oldExit }()
-	exitProcess = func(code int) { require(t, code == 1, "main exit status wrong") }
-	t.Setenv("CDN_HOSTS", "*")
-	main()
-	require(t, serveHTTP(&http.Server{Addr: "invalid address"}) != nil, "listen failure lost")
+	require(t, Run(get(nil), &output, func(*http.Server) error { return nil }) == 0, "nil result failed")
+	require(t, ServeHTTP(&http.Server{Addr: "invalid address"}) != nil, "listen failure lost")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	require(t, serveWithContext(ctx, &http.Server{Addr: "127.0.0.1:0"}) == http.ErrServerClosed, "context shutdown failed")
