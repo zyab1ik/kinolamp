@@ -312,13 +312,16 @@
           if (error) { notify(errorMessage(error)); return; }
           var items = json.items || [];
           if (!items.length) { notify('В KinoPub ничего не найдено.'); return; }
-          menu('Результаты KinoPub', items.map(function (item) {
-            return { title: item.title, subtitle: [item.year, item.type].filter(Boolean).join(' · '), run: function () { openItem(item.id); } };
-          }));
+          function results() {
+            menu('Результаты KinoPub', items.map(function (item) {
+              return { title: item.title, subtitle: [item.year, item.type].filter(Boolean).join(' · '), run: function () { openItem(item.id, results); } };
+            }));
+          }
+          results();
         });
       });
     }
-    function openItem(id) {
+    function openItem(id, back) {
       client.api('/items/' + encodeURIComponent(id), { nolinks: 0 }, function (error, json) {
         if (error) { notify(errorMessage(error)); return; }
         var item = json.item;
@@ -326,7 +329,7 @@
         function seasons() {
           menu(item.title, item.seasons.map(function (season, index) {
             return { title: 'Сезон ' + (season.number || index + 1), run: function () { episodes(season); } };
-          }));
+          }), back);
         }
         function episodes(season) {
           menu('Серии', (season.episodes || []).map(function (episode, index) {
@@ -339,11 +342,11 @@
         if (item.seasons && item.seasons.length) seasons();
         else {
           var videos = item.videos || [];
-          if (videos.length === 1) openVideo(item, videos[0], function () { openItem(id); }, { kind: 'part', season: 0, number: 1 });
+          if (videos.length === 1) openVideo(item, videos[0], back, { kind: 'part', season: 0, number: 1 });
           else if (videos.length) menu(item.title, videos.map(function (video, index) {
             var context = { kind: 'part', season: 0, number: index + 1 };
-            return { title: video.title || ('Видео ' + (index + 1)), subtitle: progress.label(mediaKey(item, video, context)), run: function () { openVideo(item, video, function () { openItem(id); }, context); } };
-          }));
+            return { title: video.title || ('Видео ' + (index + 1)), subtitle: progress.label(mediaKey(item, video, context)), run: function () { openVideo(item, video, function () { openItem(id, back); }, context); } };
+          }), back);
           else notify('У этого материала нет доступного видео.');
         }
       });

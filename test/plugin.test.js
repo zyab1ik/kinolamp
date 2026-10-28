@@ -116,9 +116,10 @@ test('multiple movie parts and navigation fallback', () => {
   const normal = harness(); normal.click({ original_name: 'Original' }); normal.back(); assert.deepEqual(normal.toggles, ['full']);
 });
 
-test('single movie back reloads the item and empty seasons remain navigable', () => {
+test('single movie back returns to results without reloading and empty seasons remain navigable', () => {
   const h = harness(); h.click(); h.select(); h.back();
-  assert.equal(h.requests.filter(r => r.url.includes('/v1/items/7')).length, 2);
+  assert.equal(h.requests.filter(r => r.url.includes('/v1/items/7')).length, 1);
+  assert.equal(h.current.title, 'Результаты KinoPub');
   const empty = harness({ respond(req) { return req.url.includes('/search') ? { items: [{ id: 7 }] } : { item: { seasons: [{}] } }; } });
   empty.click(); empty.select(); empty.select(); assert.equal(empty.current.items.length, 0); empty.back();
 });
@@ -327,7 +328,8 @@ test('native Select.close invokes onBack once and never recurses or runs the sel
   assert.equal(h.requests.length, 3);
   h.back();
   assert.equal(h.closes, closes + 1);
-  assert.equal(h.current.title, 'Качество');
+  assert.equal(h.current.title, 'Результаты KinoPub');
+  assert.equal(h.requests.length, 3);
 });
 
 test('KinoPub registers in the native Watch source container, never in the visible action toolbar', () => {
