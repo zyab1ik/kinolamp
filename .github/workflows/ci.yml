@@ -37,6 +37,8 @@ jobs:
         run: make check-ci
       - name: Test deployment and rollback handling
         run: make test-deploy
+      - name: Test release guards
+        run: make test-release
   go-tests:
     name: Go tests
     runs-on: ubuntu-24.04

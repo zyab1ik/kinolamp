@@ -56,3 +56,9 @@ Lampa hides Select before calling onSelect, and Select.close itself invokes onBa
 ## Device description
 
 An authenticated client posts title, coarse Lampa platform and plugin version to `/v1/device/notify` after login and on startup. This updates the current device, preserving the existing account slot and token. No hardware ID, serial number, MAC address or full user agent is collected. Existing HTTP authentication refresh/race handling also applies to this POST; failures do not block playback. No account device is removed.
+
+## Full-page KinoPub browser
+
+Current Lampa builds register a `kinolamp` Activity/Component. Search results, seasons and video/episode lists use full pages with focusable poster grids, native Scroll and Navigator keyboard/remote navigation. Quality/audio and resume choices remain short native dialogs. Older builds without Activity/Component/Scroll retain the compatible Select path.
+
+Activity history contains only serializable query/item/season routes. DOM nodes, callbacks, API responses, stream URLs and OAuth tokens are not put into the history state. Routes reload their data after a browser restart. Late responses to destroyed pages are ignored. Image URLs are validated as HTTPS; HTTP poster/thumbnail URLs are upgraded and failed images retain a placeholder. Progress labels refresh when returning from playback.

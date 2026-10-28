@@ -1,10 +1,11 @@
 FROM golang:1.27.3-alpine AS build
+ARG VERSION=dev
 WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
 COPY internal ./internal
 COPY web ./web
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/kinolamp ./cmd/kinolamp
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X github.com/zyab1ik/kinolamp/internal/app.Version=${VERSION}" -o /out/kinolamp ./cmd/kinolamp
 
 FROM alpine:3.23
 RUN apk add --no-cache ca-certificates

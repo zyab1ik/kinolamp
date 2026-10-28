@@ -93,7 +93,7 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" && r.URL.Path == "/health" {
-		respond(w, 200, map[string]any{"ok": true, "version": "0.1.0", "proxy": a.config.proxy})
+		respond(w, 200, map[string]any{"ok": true, "version": Version, "proxy": a.config.proxy})
 		return
 	}
 	if !a.config.proxy {
