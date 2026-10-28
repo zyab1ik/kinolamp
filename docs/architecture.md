@@ -62,3 +62,9 @@ An authenticated client posts title, coarse Lampa platform and plugin version to
 Current Lampa builds register a `kinolamp` Activity/Component. Search results, seasons and video/episode lists use full pages with focusable poster grids, native Scroll and Navigator keyboard/remote navigation. Quality/audio and resume choices remain short native dialogs. Older builds without Activity/Component/Scroll retain the compatible Select path.
 
 Activity history contains only serializable query/item/season routes. DOM nodes, callbacks, API responses, stream URLs and OAuth tokens are not put into the history state. Routes reload their data after a browser restart. Late responses to destroyed pages are ignored. Image URLs are validated as HTTPS; HTTP poster/thumbnail URLs are upgraded and failed images retain a placeholder. Progress labels refresh when returning from playback.
+
+### Native playback UX
+
+On full-card completion the plugin adds a handler through Lampa's Start component API. It runs after the normal button grouping, replacing only the native Watch button's activation and long-press actions; Lampa retains its focus handler. Watch resolves a unique title/year/type match or an IMDb ID. A single-video film starts immediately with the saved position and highest stream within the quality limit. Multiple or missing matches retain the native results page. Series open seasons and episodes. Long press uses Lampa.Select for the available source actions. Builds without the Start extension API retain the source-list integration.
+
+Direct playback passes available qualities to Lampa.Player's `quality` map. No second Back button is rendered inside Kinolamp pages. Settings use SettingsApi and a nested native Settings component; proxy credentials are hidden and removed from focus navigation until proxy mode is enabled. They are preserved in local storage when hidden. Progress reset stays behind confirmation in Advanced.

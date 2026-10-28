@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.0 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.1 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.0';
+  var VERSION = '0.3.1';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -54,6 +54,20 @@
   function audioTitle(audio, index) {
     return [audio.lang, audio.type && (audio.type.short_title || audio.type.title), audio.author && audio.author.title, audio.codec]
       .filter(Boolean).join(' · ') || ('Дорожка ' + (index + 1));
+  }
+
+  function matchItem(movie, items) {
+    function title(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim(); }
+    var names = [movie.title, movie.name, movie.original_title, movie.original_name].map(title).filter(Boolean);
+    var year = String(movie.release_date || movie.first_air_date || movie.year || '').slice(0, 4);
+    var series = !!movie.first_air_date || movie.media_type === 'tv';
+    var exact = (items || []).filter(function (item) {
+      if (movie.imdb_id && item.imdb === movie.imdb_id) return true;
+      if (!year || String(item.year) !== year) return false;
+      if (series ? item.type !== 'serial' : item.type !== 'movie') return false;
+      return String(item.title || '').split('/').some(function (part) { return names.indexOf(title(part)) !== -1; });
+    });
+    return exact.length === 1 ? exact[0] : null;
   }
 
   function nameExtension(Lampa, root) {
@@ -112,7 +126,7 @@
     return { get: get, save: save, clear: clear, label: label };
   }
 
-  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__back{padding:.3em .65em;border-radius:.4em;background:rgba(255,255,255,.08)}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}.kp-page__back.focus{background:#fff;color:#151515}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}';
+  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}';
 
   function createNativePages(Lampa, $, navigation, load, activate) {
     if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) return null;
@@ -126,12 +140,10 @@
       var view = $('<div class="kp-page"></div>');
       var head = $('<div class="kp-page__head"></div>');
       var title = $('<div class="kp-page__title"></div>').text('KinoPub');
-      var back = $('<div class="kp-page__back selector"></div>').text('‹ Назад');
       var status = $('<div class="kp-page__status" role="status"></div>').text('Загрузка…');
       var grid = $('<div class="kp-page__grid"></div>');
       var scroll = new Lampa.Scroll({ mask: true, over: true });
-      back.on('hover:enter', function () { Lampa.Activity.backward(); });
-      head.append(back).append(title);
+      head.append(title);
       scroll.append(grid);
       view.append(head).append(status).append(scroll.render());
       this.create = function () {
@@ -144,7 +156,7 @@
           if (error) status.text(error);
           else {
             title.text(data.title);
-            status.text(data.rows.length ? 'Выбери материал. Назад — к предыдущей странице.' : 'Ничего не найдено. Вернись назад и выбери другой материал.');
+            status.text(data.rows.length ? (data.hint || 'Выбери подходящий результат.') : 'Ничего не найдено. Вернись назад и выбери другой материал.');
             data.rows.forEach(function (row) {
               var card = $('<div class="kp-page__card selector"></div>');
               var poster = $('<div class="kp-page__poster"></div>');
@@ -390,6 +402,18 @@
       var query = movie.title || movie.name || movie.original_title || movie.original_name || '';
       if (!query) { notify('Открой карточку фильма или сериала.'); return; }
       authorized(function () {
+        if (movie.release_date || movie.first_air_date || movie.year || movie.imdb_id) {
+          client.api('/items/search', { q: query }, function (error, json) {
+            if (error) { notify(errorMessage(error)); return; }
+            var match = matchItem(movie, json.items);
+            if (match) openMatchedItem(match.id);
+            else showResults();
+          });
+          return;
+        }
+        showResults();
+      });
+      function showResults() {
         if (pages) { pages.show({ view: 'search', query: query }); return; }
         client.api('/items/search', { q: query }, function (error, json) {
           if (error) { notify(errorMessage(error)); return; }
@@ -402,6 +426,19 @@
           }
           results();
         });
+      }
+    }
+    function openMatchedItem(id) {
+      client.api('/items/' + encodeURIComponent(id), { nolinks: 0 }, function (error, json) {
+        if (error || !json.item) { notify(errorMessage(error)); return; }
+        var item = json.item;
+        if (item.seasons && item.seasons.length) {
+          if (pages) pages.show({ view: 'item', id: id });
+          else openItem(id, function () { restore('full'); });
+        } else if (item.videos && item.videos.length === 1) {
+          openVideo(item, item.videos[0], null, { kind: 'part', season: 0, number: 1 }, true);
+        } else if (pages) pages.show({ view: 'item', id: id });
+        else openItem(id, function () { restore('full'); });
       });
     }
     function openItem(id, back) {
@@ -434,7 +471,7 @@
         }
       });
     }
-    function openVideo(item, video, back, context) {
+    function openVideo(item, video, back, context, automatic) {
       if (pages) back = pages.resume;
       var playback = { key: mediaKey(item, video, context), time: 0 };
       function choose(data) {
@@ -442,9 +479,9 @@
         var maxHeight = Number(client.get('quality')) || 1080;
         var options = streams(data.files, proxy, maxHeight);
         if (!options.length) { notify(proxy ? 'Нет HTTPS HLS4-ссылок. Отключи HLS-прокси или проверь данные KinoPub.' : 'Нет HTTPS-ссылок на видео.'); return; }
-        menu('Качество', options.map(function (stream) {
+        var choices = options.map(function (stream) {
           return { title: (stream.height ? stream.height + 'p' : 'Авто') + ' · ' + stream.format.toUpperCase(), run: function () {
-            if (!proxy) { play(item, video, data, stream.url, playback); return; }
+            if (!proxy) { play(item, video, data, stream.url, playback, options); return; }
             var audios = video.audios || data.audios || [];
             var tracks = audios.map(function (audio, index) {
               return { title: audioTitle(audio, index), run: function () {
@@ -454,7 +491,9 @@
             if (tracks.length) menu('Озвучка', tracks, function () { choose(data); });
             else prepareProxy(item, video, data, stream, 0, Math.min(stream.height || maxHeight, maxHeight), playback);
           } };
-        }), back);
+        });
+        if (automatic) choices[0].run();
+        else menu('Качество', choices, back);
       }
       function load() {
         if (video.files && video.files.length) { choose(video); return; }
@@ -474,6 +513,7 @@
       } });
       entries.push({ title: 'Начать сначала', run: function () { progress.clear(playback.key); load(); } });
       entries.push({ title: 'Сбросить прогресс', run: function () { progress.clear(playback.key); notify('Прогресс этого видео сброшен.'); back(); } });
+      if (automatic) { entries[0].run(); return; }
       menu(previous.watched ? 'Уже просмотрено' : 'Продолжить просмотр', entries, back);
     }
     function prepareProxy(item, video, data, stream, voice, height, playback) {
@@ -492,11 +532,15 @@
           play(item, video, data, json.url, playback);
         });
     }
-    function play(item, video, data, url, playback) {
+    function play(item, video, data, url, playback, qualities) {
       var subtitles = (data.subtitles || video.subtitles || []).filter(function (s) { return httpsURL(s.url); }).map(function (s) {
         return { label: String(s.lang || 'Subtitles'), language: String(s.lang || ''), url: s.url };
       });
       var work = { title: String(item.title || '') + (video.title ? ' · ' + video.title : ''), url: url };
+      if (qualities && qualities.length > 1) {
+        work.quality = {};
+        qualities.forEach(function (stream) { work.quality[stream.height ? stream.height + 'p' : 'Авто'] = stream.url; });
+      }
       if (canTrack && playback.key) {
         work._kinolampProgress = playback;
         work.timeline = { time: playback.time, duration: 0, percent: 0, handler: function (_percent, time, duration) {
@@ -525,7 +569,7 @@
         var item = json.item;
         var image = poster(item);
         if (route.kp_view === 'item' && item.seasons && item.seasons.length) {
-          done(null, { title: item.title, rows: item.seasons.map(function (season, index) {
+          done(null, { title: item.title, hint: 'Выбери сезон.', rows: item.seasons.map(function (season, index) {
             return { title: 'Сезон ' + (season.number || index + 1), subtitle: item.title, poster: image, next: { view: 'season', id: item.id, season: index } };
           }) });
           return;
@@ -533,38 +577,49 @@
         var season = (item.seasons || [])[route.kp_season];
         var episodes = route.kp_view === 'season';
         var videos = episodes ? season && season.episodes || [] : item.videos || [];
-        done(null, { title: item.title, rows: videos.map(function (video, index) {
+        done(null, { title: item.title, hint: episodes ? 'Выбери серию — она откроется в плеере.' : 'Выбери часть фильма.', rows: videos.map(function (video, index) {
           var context = { kind: episodes ? 'episode' : 'part', season: episodes ? (season.number === undefined ? Number(route.kp_season) + 1 : season.number) : 0, number: video.number || index + 1 };
           return { title: video.title || (episodes ? 'Серия ' : 'Видео ') + context.number, subtitle: function () { return progress.label(mediaKey(item, video, context)); }, poster: imageURL(video.thumbnail) || image, item: item, video: video, context: context };
         }) });
       });
     }
     function activatePageRow(row) {
-      if (row.next) pages.show(row.next);
-      else openVideo(row.item, row.video, pages.resume, row.context);
+      if (row.next && row.next.view === 'item') openMatchedItem(row.next.id);
+      else if (row.next) pages.show(row.next);
+      else openVideo(row.item, row.video, pages.resume, row.context, true);
     }
 
     var icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="48" height="48" role="img" aria-label="Kinolamp"><rect x="1" y="1" width="94" height="94" rx="26" fill="#142329" stroke="#2b4249" stroke-width="2"/><path d="M22 8h35C35 8 19 23 15 42V24c0-9 3-13 7-16Z" fill="#fff" opacity=".035"/><path d="M48 18c-13.3 0-24 10.5-24 23.5 0 9 4.7 15.6 11.2 21.2l1.5 3.3h22.6l1.5-3.3C67.3 57.1 72 50.5 72 41.5 72 28.5 61.3 18 48 18Z" fill="#9cebc9"/><path d="M48 18c-13.3 0-24 10.5-24 23.5 0 3.1.6 5.9 1.6 8.4C25.2 34.4 36 23 49.4 23c8.2 0 15.4 3.6 20 9.2C65.7 23.8 57.5 18 48 18Z" fill="#d6ffed"/><path d="M43.7 31.1a2.4 2.4 0 0 0-3.7 2v19.8a2.4 2.4 0 0 0 3.7 2l15-9.9a2.4 2.4 0 0 0 0-4Z" fill="#142329"/><rect x="37" y="71" width="22" height="5" rx="2.5" fill="#9cebc9"/><path d="M41 81h14a7.7 7.7 0 0 1-14 0Z" fill="#68caa7"/><path d="m20 19-4-4m60 4 4-4M48 8V5" fill="none" stroke="#9cebc9" stroke-width="2.5" stroke-linecap="round" opacity=".45"/></svg>';
     Lampa.SettingsApi.addComponent({ component: 'kp_self', name: 'Kinolamp', icon: icon });
-    function setting(key, type, name, description, values, initial) {
+    Lampa.Template.add('settings_kp_self_advanced', '<div></div>');
+    function setting(key, type, name, description, values, initial, advanced) {
       Lampa.SettingsApi.addParam({
-        component: 'kp_self',
-        param: { name: PREFIX + key, type: type, placeholder: 'Не задано', values: values || '', 'default': initial === undefined ? '' : initial },
-        field: { name: name, description: description }
+        component: advanced ? 'kp_self_advanced' : 'kp_self',
+        param: { name: PREFIX + key, type: type, placeholder: 'Не задано', values: values || '', 'default': initial },
+        field: { name: name, description: description },
+        onChange: function () { Lampa.Settings.update(); },
+        onRender: function (item) {
+          if (type === 'input' && client.get('proxy_enabled') !== true && client.get('proxy_enabled') !== 'true') item.hide().removeClass('selector');
+        }
       });
     }
-    function action(key, name, run) {
-      Lampa.SettingsApi.addParam({ component: 'kp_self', param: { name: PREFIX + key, type: 'button' }, field: { name: name }, onChange: run });
+    function action(key, name, run, advanced) {
+      Lampa.SettingsApi.addParam({ component: advanced ? 'kp_self_advanced' : 'kp_self', param: { name: PREFIX + key, type: 'button' }, field: { name: name }, onChange: run,
+        onRender: function (item) {
+          if (key === 'login' && client.hasToken() || key === 'logout' && !client.hasToken()) item.hide().removeClass('selector');
+        }
+      });
     }
-    setting('quality', 'select', 'Максимальное качество', 'Для HLS-прокси также ограничивает вариант внутри master.', { '480': '480p', '720': '720p', '1080': '1080p', '2160': '2160p' }, '1080');
-    setting('proxy_enabled', 'trigger', 'Использовать свой HLS-прокси', 'Выключено по умолчанию. Для Samsung Tizen с проблемными HLS4.', '', false);
-    setting('proxy_url', 'input', 'HTTPS-адрес своего HLS-прокси', 'Например https://lampa.example.com. Без завершающего пути.');
-    setting('proxy_token', 'input', 'Ключ своего HLS-прокси', 'PROXY_TOKEN из .env на VPS. Минимум 32 символа.');
-    action('login', 'Войти в KinoPub', function () { login(); });
+    setting('quality', 'select', 'Максимальное качество', 'Лучшее доступное качество в пределах выбранного значения.', { '480': '480p', '720': '720p', '1080': '1080p', '2160': '2160p' }, '1080');
+    setting('proxy_enabled', 'trigger', 'Использовать свой HLS-прокси', 'Включай только при проблемах воспроизведения HLS на телевизоре.', '', false, true);
+    setting('proxy_url', 'input', 'HTTPS-адрес своего HLS-прокси', 'Адрес твоего сервера без завершающего пути.', '', '', true);
+    setting('proxy_token', 'input', 'Ключ своего HLS-прокси', 'Ключ доступа к твоему прокси. Минимум 32 символа.', '', '', true);
+    action('login', 'Войти в KinoPub', function () { login(function () { Lampa.Settings.update(); }); });
     action('logout', 'Выйти из KinoPub', function () {
       if (auth) { stopLogin(); Lampa.Modal.close(); }
-      client.logout(); notify('Локальная сессия удалена. Отзыв устройства доступен на kino.pub.');
+      client.logout(); Lampa.Settings.update(); notify('Локальная сессия удалена. Отзыв устройства доступен на kino.pub.');
     });
+    action('advanced', 'Дополнительно', function () { Lampa.Settings.create('kp_self_advanced', { onBack: function () { Lampa.Settings.create('kp_self'); } }); });
     action('privacy', 'О плагине и приватности', function () {
       notify('Kinolamp ' + VERSION + ': без телеметрии и облачной синхронизации. Токены на устройстве. HLS-прокси получает только ссылку на поток.');
     });
@@ -572,7 +627,7 @@
       menu('Сбросить локальный прогресс?', [{ title: 'Удалить прогресс Kinolamp', run: function () {
         session = null; progress.clear(); notify('Прогресс Kinolamp сброшен.');
       } }]);
-    });
+    }, true);
     Lampa.Listener.follow('full', function (event) {
       if (!event || event.type !== 'complite' || !event.data || !event.data.movie) return;
       var holder = event.object && event.object.activity && event.object.activity.render();
@@ -583,10 +638,23 @@
       button.append($(icon)).append($('<span></span>').text('KinoPub'));
       button.on('hover:enter', function () { search(event.data.movie); });
       target.append(button);
+      // Extend Lampa's button grouping after its own source handlers are installed.
+      var start = event.link && event.link.items && event.link.items[0];
+      if (start && start.use) start.use({ onGroupButtons: function () {
+        var html = this.html;
+        html.find('.button--play').unbind('hover:enter hover:long').on('hover:enter', function () { search(event.data.movie); }).on('hover:long', function () {
+          var sources = [];
+          html.find('.buttons--container > .full-start__button').not('.hide').each(function () {
+            var source = $(this);
+            sources.push({ title: source.text(), run: function () { source.trigger('hover:enter'); } });
+          });
+          menu('Источники', sources);
+        });
+      } });
     });
     pages = createNativePages(Lampa, $, root.Navigator, pageRows, activatePageRow);
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
-  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, createNativePages: createNativePages, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
+  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, matchItem: matchItem, createNativePages: createNativePages, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
 });

@@ -30,19 +30,17 @@ test('search opens a real Activity with safe poster cards and serializable histo
   assert.ok(h.toggles.includes('head')); assert.ok(h.toggles.includes('menu'));
   h.canMove = true; h.controllers.content.up(); h.controllers.content.left();
   assert.deepEqual(h.moves, ['down', 'right', 'up', 'left']);
-  h.openCard(0);
+  h.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 });
   assert.equal(h.routes[1].kp_view, 'item');
   h.openCard(0);
-  assert.equal(h.current.title, 'Качество');
-  h.back();
+  assert.equal(h.current, undefined);
   assert.equal(h.routes.length, 2);
-  h.openCard(0); h.select();
   assert.equal(h.plays.length, 1);
   h.controllers.content.back();
   assert.equal(h.pages.length, 1);
   h.pages[0].pause(); h.pages[0].stop();
-  const back = h.descendants(h.pages[0].render()).find(node => String(node.input).includes('kp-page__back'));
-  back.handlers['hover:enter']();
+  assert.equal(h.descendants(h.pages[0].render()).some(node => String(node.input).includes('kp-page__back')), false);
+  h.controllers.content.back();
   assert.equal(h.pages.length, 0);
   assert.equal(h.scrollDestroyed, 2);
 });
@@ -74,7 +72,7 @@ test('native seasons and episode pages retain routes through Back and open the n
     h.click(); h.openCard(0); assert.equal(h.pageCards().length, 1);
     h.openCard(0); assert.equal(h.routes[2].kp_view, 'season');
     assert.equal(h.routes[2].kp_season, 0);
-    h.openCard(0); h.select(); assert.equal(h.plays.length, 1);
+    h.openCard(0); assert.equal(h.plays.length, 1);
     h.Lampa.Activity.backward(); assert.equal(h.pages.length, 2);
   }
 });
@@ -82,7 +80,7 @@ test('native seasons and episode pages retain routes through Back and open the n
 test('item and season pages tolerate unavailable details and empty video lists', () => {
   for (const result of [{}, { failure: true, xhr: { status: 503, responseText: '{}' } }, { item: { title: 'Empty' } }, { item: { title: 'Empty', seasons: [] } }]) {
     const h = harness({ native: true, respond(req) { return req.url.includes('/search') ? { items: [{ id: 7 }] } : result; } });
-    h.click(); h.openCard(0); assert.equal(h.pageCards().length, 0);
+    h.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 }); assert.equal(h.pageCards().length, 0);
   }
   const h = harness({ native: true, respond(req) { return req.url.includes('/search') ? { items: [{ id: 7 }] } : { item: { id: 7, title: 'Empty', seasons: [{}] } }; } });
   h.click(); h.openCard(0); h.openCard(0); assert.equal(h.pageCards().length, 0);
@@ -90,7 +88,7 @@ test('item and season pages tolerate unavailable details and empty video lists',
 
 test('native movie pages provide a fallback video title and stable numbering', () => {
   const h = harness({ native: true, respond(req) { return req.url.includes('/search') ? { items: [{ id: 7 }] } : { item: { id: 7, title: 'Movie', videos: [video({ title: '', number: 2 })] } }; } });
-  h.click(); h.openCard(0);
+  h.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 });
   assert.equal(h.pageCards()[0].children[1].value, 'Видео 2');
 });
 
@@ -101,7 +99,7 @@ test('posters use HTTPS and progress labels refresh when returning from playback
     return { item: { id: 7, title: 'Movie', videos: [video({ thumbnail: 'http://cdn.example/thumbnail.jpg' })] } };
   } });
   h.click(); assert.ok(h.nodes.some(node => node.attributes?.src === 'https://cdn.example/small.jpg'));
-  h.openCard(0); assert.ok(h.nodes.some(node => node.attributes?.src === 'https://cdn.example/thumbnail.jpg'));
+  h.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 }); assert.ok(h.nodes.some(node => node.attributes?.src === 'https://cdn.example/thumbnail.jpg'));
   const key = plugin.mediaKey({ id: 7 }, video(), { kind: 'part', season: 0, number: 1 });
   h.storage.set('kp_self_progress', { [key]: { time: 95, duration: 200 } });
   h.pages.at(-1).start();
@@ -109,11 +107,11 @@ test('posters use HTTPS and progress labels refresh when returning from playback
 });
 
 test('a native Activity route can be restored after plugin reload without callback registries', () => {
-  const first = harness({ native: true }); first.click(); first.openCard(0);
+  const first = harness({ native: true }); first.click(); first.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 });
   const route = JSON.parse(JSON.stringify(first.routes[1]));
   const restored = harness({ native: true });
   restored.Lampa.Activity.push(route);
   assert.equal(restored.pageCards().length, 1);
-  restored.openCard(0); restored.select();
+  restored.openCard(0);
   assert.equal(restored.plays.length, 1);
 });
