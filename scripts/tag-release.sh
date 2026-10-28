@@ -20,4 +20,4 @@ if ! git show-ref --verify --quiet "refs/tags/$tag"; then
   git tag --annotate "$tag" --message "Kinolamp $tag"
 fi
 git push origin "refs/tags/$tag"
-echo "Tag $tag pushed; Release workflow will validate and publish it"
+echo "Tag $tag pushed; publication waits for successful main CI and deployment"

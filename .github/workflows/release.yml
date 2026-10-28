@@ -1,44 +1,61 @@
 name: Release
 on:
-  push:
-    tags: ['v*']
+  workflow_call:
+    inputs:
+      revision:
+        description: Successfully tested and deployed main commit
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: release-${{ github.ref }}
+  group: kinolamp-release
   cancel-in-progress: false
 jobs:
   build:
     name: Validate and package release
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      publish: ${{ steps.plan.outputs.publish }}
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Check out tagged source
+      - name: Check out deployed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.revision }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate tag version and main ancestry
+      - name: Plan release for the deployed revision
+        id: plan
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          test "$RELEASE_TAG" = "v$(cat VERSION)"
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_REVISION: ${{ inputs.revision }}
+        run: bash scripts/release-plan.sh
       - name: Set up Go
+        if: steps.plan.outputs.publish == 'true'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: false
       - name: Set up Node.js 24
+        if: steps.plan.outputs.publish == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
       - name: Run quality, coverage and release checks
+        if: steps.plan.outputs.publish == 'true'
         run: make check check-ci coverage test-release
       - name: Build release archives and checksums
+        if: steps.plan.outputs.publish == 'true'
         run: make dist
       - name: Upload release assets
+        if: steps.plan.outputs.publish == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-assets
@@ -48,6 +65,7 @@ jobs:
   publish:
     name: Publish GitHub Release
     needs: build
+    if: needs.build.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -63,16 +81,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          RELEASE_REVISION: ${{ inputs.revision }}
         run: |
           (cd dist && sha256sum --check SHA256SUMS)
+          if tagged=$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha 2>/dev/null); then
+            test "$tagged" = "$RELEASE_REVISION"
+          else
+            gh api --method POST "repos/$GH_REPO/git/refs" -f "ref=refs/tags/$RELEASE_TAG" -f "sha=$RELEASE_REVISION" > /dev/null
+          fi
           if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null); then
             if [ "$draft" != true ]; then
               echo 'Release is already published; leaving its assets unchanged.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
           else
-            gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes --title "Kinolamp $RELEASE_TAG"
+            gh release create "$RELEASE_TAG" --verify-tag --target "$RELEASE_REVISION" --draft --generate-notes --title "Kinolamp $RELEASE_TAG"
           fi
           gh release upload "$RELEASE_TAG" dist/* --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest

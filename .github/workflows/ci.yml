@@ -213,3 +213,13 @@ jobs:
             echo 'Deployment runs only from main after every check passes. Pull requests never deploy.'
             echo '[Open site](https://kinolamp.eu3.filefor.net/)'
           } >> "$GITHUB_STEP_SUMMARY"
+  release:
+    name: Release
+    needs: [checks, go-tests, plugin-tests, container, deploy, summary]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.deploy.outputs.deployed == 'true'
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      revision: ${{ github.sha }}

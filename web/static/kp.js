@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.1 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.2 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.1';
+  var VERSION = '0.3.2';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.

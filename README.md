@@ -121,7 +121,7 @@ GitHub Actions запускает `make check`, `make coverage`, `make build`, �
 
 ## Публикация версий
 
-Версия хранится в `VERSION` и проверяется на совпадение с плагином. `make release-check` проверяет чистый main, а `make release` публикует тег текущей версии. Workflow Release проверяет код и собирает GitHub Release с `kp.js`, SVG-логотипом, Go-сервером Linux amd64/arm64 и SHA256SUMS. Подробности — [docs/releases.md](docs/releases.md).
+Версия хранится в `VERSION` и проверяется на совпадение с плагином. После слияния PR с новой версией main автоматически выполняет все проверки, деплой и итоговый отчёт, затем публикует GitHub Release с `kp.js`, SVG-логотипом, Go-сервером Linux amd64/arm64 и SHA256SUMS. Пропущенный или неуспешный деплой блокирует публикацию. Уже опубликованная версия пропускается; для следующего релиза увеличь `VERSION` в PR. Ручной тег не запускает релиз. Подробности — [docs/releases.md](docs/releases.md).
 
 ## Автодеплой из main
 
