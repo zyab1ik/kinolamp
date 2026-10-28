@@ -266,7 +266,7 @@ func TestHTTPPrivacyAndTickets(t *testing.T) {
 
 func TestPublicPluginAssetsAllowBrowserChecksWithoutOpeningPrivateAPI(t *testing.T) {
 	a := newApp(testConfig(), upstream(200, testMaster))
-	for _, route := range []string{"/", "/kp.js?cache=true", "/icon.svg"} {
+	for _, route := range []string{"/", "/kp.js?cache=true", "/icon.svg", "/style.css"} {
 		for _, method := range []string{"GET", "HEAD"} {
 			w := call(a, method, route, "", "", "http://lampa.mx")
 			require(t, w.Code == 200 && w.Header().Get("Access-Control-Allow-Origin") == "*", "public plugin asset must support cross-origin checks")

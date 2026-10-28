@@ -27,9 +27,10 @@ type rate struct {
 }
 
 var publicAssets = map[string]struct{ name, contentType string }{
-	"/":         {"static/index.html", "text/html; charset=utf-8"},
-	"/kp.js":    {"static/kp.js", "application/javascript; charset=utf-8"},
-	"/icon.svg": {"static/icon.svg", "image/svg+xml"},
+	"/":          {"static/index.html", "text/html; charset=utf-8"},
+	"/kp.js":     {"static/kp.js", "application/javascript; charset=utf-8"},
+	"/style.css": {"static/style.css", "text/css; charset=utf-8"},
+	"/icon.svg":  {"static/icon.svg", "image/svg+xml"},
 }
 
 type app struct {
@@ -60,7 +61,7 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'")
 	origin := r.Header.Get("Origin")
 	allowedOrigin := origin == ""
 	for _, candidate := range a.config.origins {
