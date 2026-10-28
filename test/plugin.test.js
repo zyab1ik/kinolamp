@@ -317,3 +317,15 @@ test('mounting guards, duplicate install guard and browser wrapper', () => {
   const w = { Lampa: {}, jQuery() {} }; vm.runInNewContext(source, { window: w }, { filename }); assert.equal(w.kinolampInstalled, true);
   vm.runInNewContext(source, { window: { Lampa: {}, $() {} } }, { filename });
 });
+
+test('extension metadata names only its own unnamed entry and preserves custom names', () => {
+  const url = 'https://kinolamp.example/kp.js'; const root = { document: { currentScript: { src: url + '?reset=1' } } };
+  const entries = [{ url }, { url: 'https://other.example/kp.js' }, { url, name: 'My custom name' }, {}]; let saves = 0;
+  const Lampa = { Plugins: { get() { return entries; }, save() { saves++; } } };
+  plugin.nameExtension(Lampa, root);
+  assert.equal(entries[0].name, 'Kinolamp'); assert.equal(entries[0].author, 'zyab1ik'); assert.equal(saves, 1);
+  assert.equal(entries[1].name, undefined); assert.equal(entries[2].name, 'My custom name');
+  plugin.nameExtension(Lampa, root); assert.equal(saves, 1);
+  for (const current of [{}, { document: {} }, { document: { currentScript: {} } }]) plugin.nameExtension(Lampa, current);
+  for (const api of [{}, { Plugins: {} }, { Plugins: { get() { return []; } } }]) plugin.nameExtension(api, root);
+});

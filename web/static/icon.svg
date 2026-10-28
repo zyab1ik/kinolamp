@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Kinolamp">
+  <rect width="64" height="64" rx="16" fill="#14232b"/>
+  <path d="M22 43v-5a18 18 0 1 1 20 0v5" fill="#7ce8c3"/>
+  <path d="m28 15 15 10-15 10Z" fill="#14232b"/>
+  <path d="M23 47h18m-15 7h12" fill="none" stroke="#7ce8c3" stroke-width="4" stroke-linecap="round"/>
+</svg>
