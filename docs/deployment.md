@@ -1,6 +1,6 @@
 # Автодеплой Kinolamp
 
-Workflow `CI and Deployment` (`.github/workflows/ci.yml`) запускает параллельно проверки Go/JS, 100% покрытие и проверку Docker. Только main после успешных проверок передаёт проверенный образ на `debian@eu3.filefor.net:2223`. Сайт: https://kinolamp.eu3.filefor.net/.
+Workflow `CI and Deployment` (`.github/workflows/ci.yml`) запускает параллельно проверки Go/JS, 100% покрытие и проверку Docker. Только main после успешных проверок передаёт проверенный образ на `debian@eu3.filefor.net:2223`. Сайт: https://kp.eu3.filefor.net/.
 
 Workflow запускается один раз для PR в main и один раз после push/слияния в main; дублирующий push-run для ветки PR отключён. Названия workflow, jobs, шагов и итоговый отчёт — на английском. Устаревшие PR-запуски отменяются; текущая выкладка main не прерывается.
 

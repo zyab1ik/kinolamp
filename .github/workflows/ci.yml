@@ -165,10 +165,10 @@ jobs:
       - name: Verify public HTTPS endpoints
         if: steps.latest.outputs.deploy == 'true'
         run: |
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --max-time 15 https://kinolamp.eu3.filefor.net/health
-          curl --fail --silent --show-error --max-time 15 -I https://kinolamp.eu3.filefor.net/kp.js
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --max-time 15 https://kp.eu3.filefor.net/health
+          curl --fail --silent --show-error --max-time 15 -I https://kp.eu3.filefor.net/kp.js
           echo '### Deployment complete' >> "$GITHUB_STEP_SUMMARY"
-          echo "Commit: \`$GITHUB_SHA\` · [Open Kinolamp](https://kinolamp.eu3.filefor.net/)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: \`$GITHUB_SHA\` · [Open Kinolamp](https://kp.eu3.filefor.net/)" >> "$GITHUB_STEP_SUMMARY"
   summary:
     name: Pipeline summary
     if: always()
@@ -215,7 +215,7 @@ jobs:
             echo "| VPS deployment and public HTTPS check | $(status "$DEPLOY") |"
             echo ''
             echo 'Deployment runs only from main after every check passes. Pull requests never deploy.'
-            echo '[Open site](https://kinolamp.eu3.filefor.net/)'
+            echo '[Open site](https://kp.eu3.filefor.net/)'
           } >> "$GITHUB_STEP_SUMMARY"
   release:
     name: Release
