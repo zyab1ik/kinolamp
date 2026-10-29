@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.2 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.3 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.2';
+  var VERSION = '0.3.3';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -537,6 +537,9 @@
         return { label: String(s.lang || 'Subtitles'), language: String(s.lang || ''), url: s.url };
       });
       var work = { title: String(item.title || '') + (video.title ? ' · ' + video.title : ''), url: url };
+      // Honor Lampa's explicit System/Software choice. Its Chrome heuristic otherwise
+      // forces HLS.js even when native HLS is available. Lampa still checks support.
+      work.hls_type = Lampa.Storage.get('player_hls_method', 'application') === 'hlsjs' ? 'hlsjs' : 'native';
       if (qualities && qualities.length > 1) {
         work.quality = {};
         qualities.forEach(function (stream) { work.quality[stream.height ? stream.height + 'p' : 'Авто'] = stream.url; });

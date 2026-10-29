@@ -102,3 +102,13 @@ test('quality controls also accept an automatic unknown-resolution stream', () =
   const h = harness({ respond(req) { return req.url.includes('/search') ? { items: [found] } : { item: { id: 7, videos: [video({ files: [{ url: { hls2: 'https://cdn.example/auto' } }, { quality: '720p', url: { hls2: 'https://cdn.example/720' } }] })] } }; } });
   h.click(movie); assert.ok(h.plays[0].quality['Авто']);
 });
+
+test('playback respects the native Lampa HLS preference without changing shared settings', () => {
+  for (const method of [undefined, 'application', 'hlsjs']) {
+    const initial = method === undefined ? {} : { player_hls_method: method };
+    const h = harness({ storage: initial }); h.click(); h.select(); h.select();
+    assert.equal(h.plays[0].hls_type, method === 'hlsjs' ? 'hlsjs' : 'native');
+    assert.equal(h.storage.get('player_hls_method'), method);
+    assert.equal(h.plays[0].url, 'https://edge.cdn.example/hls2/master');
+  }
+});
