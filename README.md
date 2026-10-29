@@ -1,6 +1,7 @@
-# Kinolamp — KinoPub в Lampa на Samsung Tizen
+# Kinolamp — KinoPub для Lampa
 
-Плагин KinoPub для Lampa, особенно удобный на телевизорах Samsung Tizen.
+Плагин KinoPub для Lampa на телевизорах, приставках и в браузере.
+Один из удобных сценариев — Samsung Tizen с Media Station X.
 Удобный сценарий на телевизоре: **Media Station X (MSX) → Lampa → Kinolamp → KinoPub**.
 Если Lampa уже настроена в MSX, добавь Kinolamp в её расширения и выбирай кино
 с пульта: отдельный клиент KinoPub на телевизоре устанавливать не требуется.
