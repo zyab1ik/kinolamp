@@ -115,3 +115,23 @@ test('a native Activity route can be restored after plugin reload without callba
   restored.openCard(0);
   assert.equal(restored.plays.length, 1);
 });
+
+test('series pages show KinoPub details, season titles and landscape episode metadata safely', () => {
+  const h = harness({ native: true, respond() {
+    return { item: { id: 7, title: 'Series', year: 2021, plot: '<script>unsafe</script>\nОписание сериала', genres: [{ title: 'Драма' }], countries: [{ title: 'Франция' }], seasons: [{ number: 0, title: 'Специальные выпуски', episodes: [video({ title: 'Начало', duration: 2710 }), video({ title: '', number: 2, duration: 0 })] }] } };
+  } });
+  h.Lampa.Activity.push({ component: 'kinolamp', kp_view: 'item', kp_id: 7 });
+  assert.ok(h.nodes.some(n => n.value === '2021 · Драма · Франция'));
+  assert.ok(h.nodes.some(n => n.value === '<script>unsafe</script>\nОписание сериала'));
+  assert.equal(h.pageCards()[0].children[1].value, 'Сезон 0');
+  assert.equal(h.pageCards()[0].children[2].value, 'Специальные выпуски · Серий: 2');
+  h.openCard(0);
+  assert.ok(h.nodes.some(n => n.attributes?.['data-layout'] === 'episodes'));
+  assert.ok(h.nodes.some(n => n.value === 'Сезон 0 · Серий: 2'));
+  assert.equal(h.pageCards()[0].children[1].value, 'Серия 1 · Начало');
+  assert.equal(h.pageCards()[0].children[2].value, '46 мин');
+  assert.equal(h.pageCards()[1].children[1].value, 'Серия 2');
+  h.storage.set('kp_self_progress', { [plugin.mediaKey({ id: 7 }, video(), { kind: 'episode', season: 0, number: 1 })]: { time: 120, duration: 2710 } });
+  h.pages.at(-1).start();
+  assert.equal(h.pageCards()[0].children[2].value, '46 мин · Продолжить с 2:00');
+});

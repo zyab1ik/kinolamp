@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.2 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.3 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.2';
+  var VERSION = '0.3.3';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -126,7 +126,7 @@
     return { get: get, save: save, clear: clear, label: label };
   }
 
-  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}';
+  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}.kp-page__details{font-size:1em;opacity:.8;line-height:1.5}.kp-page__description{max-width:65em;font-size:1.05em;line-height:1.55;white-space:pre-line;margin:.6em 0 1.5em}.kp-page__description:empty,.kp-page__details:empty{display:none}.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(4,minmax(0,1fr))}.kp-page__grid[data-layout=seasons] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes]{grid-template-columns:repeat(3,minmax(0,1fr))}.kp-page__grid[data-layout=episodes] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes] .kp-page__name,.kp-page__grid[data-layout=seasons] .kp-page__name{font-size:1.15em;font-weight:600}.kp-page__meta{font-size:.95em;opacity:.75;line-height:1.4}@media(max-width:800px){.kp-page__grid[data-layout=episodes],.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid[data-layout=episodes]{grid-template-columns:1fr}}';
 
   function createNativePages(Lampa, $, navigation, load, activate) {
     if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) return null;
@@ -142,8 +142,12 @@
       var title = $('<div class="kp-page__title"></div>').text('KinoPub');
       var status = $('<div class="kp-page__status" role="status"></div>').text('Загрузка…');
       var grid = $('<div class="kp-page__grid"></div>');
+      var details = $('<div class="kp-page__details"></div>');
+      var description = $('<div class="kp-page__description"></div>');
       var scroll = new Lampa.Scroll({ mask: true, over: true });
       head.append(title);
+      scroll.append(details);
+      scroll.append(description);
       scroll.append(grid);
       view.append(head).append(status).append(scroll.render());
       this.create = function () {
@@ -156,6 +160,9 @@
           if (error) status.text(error);
           else {
             title.text(data.title);
+            details.text(data.details || '');
+            description.text(data.description || '');
+            grid.attr('data-layout', data.layout || 'posters');
             status.text(data.rows.length ? (data.hint || 'Выбери подходящий результат.') : 'Ничего не найдено. Вернись назад и выбери другой материал.');
             data.rows.forEach(function (row) {
               var card = $('<div class="kp-page__card selector"></div>');
@@ -555,6 +562,10 @@
     function pageRows(route, done) {
       function imageURL(value) { return typeof value === 'string' ? value.replace(/^http:/, 'https:') : ''; }
       function poster(item) { return imageURL(item.posters && (item.posters.medium || item.posters.big || item.posters.small)); }
+      function minutes(seconds) { return seconds > 0 ? Math.ceil(seconds / 60) + ' мин' : ''; }
+      function details(item) {
+        return [item.year, (item.genres || []).map(function (genre) { return genre.title; }).join(', '), (item.countries || []).map(function (country) { return country.title; }).join(', ')].filter(Boolean).join(' · ');
+      }
       if (route.kp_view === 'search') {
         client.api('/items/search', { q: route.kp_query }, function (error, json) {
           if (error) { done(errorMessage(error)); return; }
@@ -569,17 +580,17 @@
         var item = json.item;
         var image = poster(item);
         if (route.kp_view === 'item' && item.seasons && item.seasons.length) {
-          done(null, { title: item.title, hint: 'Выбери сезон.', rows: item.seasons.map(function (season, index) {
-            return { title: 'Сезон ' + (season.number || index + 1), subtitle: item.title, poster: image, next: { view: 'season', id: item.id, season: index } };
+          done(null, { title: item.title, description: item.plot, details: details(item), layout: 'seasons', hint: 'Сезоны · ' + item.seasons.length, rows: item.seasons.map(function (season, index) {
+            return { title: 'Сезон ' + (season.number === undefined ? index + 1 : season.number), subtitle: [season.title, 'Серий: ' + (season.episodes || []).length].filter(Boolean).join(' · '), poster: image, next: { view: 'season', id: item.id, season: index } };
           }) });
           return;
         }
         var season = (item.seasons || [])[route.kp_season];
         var episodes = route.kp_view === 'season';
         var videos = episodes ? season && season.episodes || [] : item.videos || [];
-        done(null, { title: item.title, hint: episodes ? 'Выбери серию — она откроется в плеере.' : 'Выбери часть фильма.', rows: videos.map(function (video, index) {
+        done(null, { title: item.title, description: item.plot, details: details(item), layout: 'episodes', hint: episodes ? 'Сезон ' + (season && season.number !== undefined ? season.number : Number(route.kp_season) + 1) + ' · Серий: ' + videos.length : 'Выбери часть фильма.', rows: videos.map(function (video, index) {
           var context = { kind: episodes ? 'episode' : 'part', season: episodes ? (season.number === undefined ? Number(route.kp_season) + 1 : season.number) : 0, number: video.number || index + 1 };
-          return { title: video.title || (episodes ? 'Серия ' : 'Видео ') + context.number, subtitle: function () { return progress.label(mediaKey(item, video, context)); }, poster: imageURL(video.thumbnail) || image, item: item, video: video, context: context };
+          return { title: (episodes ? 'Серия ' + context.number + (video.title ? ' · ' + video.title : '') : video.title || 'Видео ' + context.number), subtitle: function () { return [minutes(video.duration), progress.label(mediaKey(item, video, context))].filter(Boolean).join(' · '); }, poster: imageURL(video.thumbnail) || image, item: item, video: video, context: context };
         }) });
       });
     }
