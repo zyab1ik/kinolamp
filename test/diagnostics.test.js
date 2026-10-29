@@ -47,7 +47,7 @@ test('disabled diagnostics adds no requests and settings expose opt-in, report, 
   const normal = harness(); const h = harness(); start(normal); start(h);
   assert.deepEqual(h.requests.map(r => r.url), normal.requests.map(r => r.url));
   assert.deepEqual(report(h).events, []);
-  h.modal.onBack(); assert.equal(h.modalClosed, 1);
+  h.modal.onBack(); assert.equal(h.modalClosed, 1); assert.equal(h.controllerName, 'settings_component');
   h.action('diagnostics'); assert.equal(h.settingsPage, 'kp_self_diagnostics');
   h.settingsParams.onBack(); assert.equal(h.settingsPage, 'kp_self_advanced');
   h.action('diagnostics_probe'); assert.match(h.notices.at(-1), /Сначала включи/);
