@@ -48,6 +48,9 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Install pinned JavaScript development tools
+        if: steps.plan.outputs.publish == 'true'
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run quality, coverage and release checks
         if: steps.plan.outputs.publish == 'true'
         run: make check check-ci coverage test-release

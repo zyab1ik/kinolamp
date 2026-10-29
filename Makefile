@@ -3,16 +3,19 @@ VERSION ?= $(shell cat VERSION)
 export VERSION
 LDFLAGS := -s -w -X github.com/zyab1ik/kinolamp/internal/app.Version=$(VERSION)
 ACTIONLINT_VERSION := v1.7.12
+# npm development dependencies may contain their own Go examples.
+# Discover every project package, excluding only downloaded third-party sources.
+GO_PACKAGES = $(shell go list ./... | sed '\|/node_modules/|d')
 REVISION ?= $(shell git rev-parse HEAD)
 COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
-.PHONY: help check check-ci check-version dist release release-check test-release fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
+.PHONY: build-plugin check-plugin fmt-plugin help check check-ci check-version dist release release-check test-release fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-check: check-version ## Check Go formatting, vet and plugin syntax
+check: check-version check-plugin ## Check Go and plugin formatting, static analysis and generated assets
 	@test -z "$$(gofmt -l cmd internal web)" || { echo 'Run make fmt'; exit 1; }
-	go vet ./...
+	go vet $(GO_PACKAGES)
 	node --check web/static/kp.js
 
 check-ci: ## Validate GitHub Actions workflow syntax and job dependencies
@@ -21,17 +24,30 @@ check-ci: ## Validate GitHub Actions workflow syntax and job dependencies
 check-version: ## Check the release and plugin versions agree
 	@printf '%s\n' "$(VERSION)" | LC_ALL=C grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$$'
 	@test "$(VERSION)" = "$$(cat VERSION)"
-	@test "$(VERSION)" = "$$(sed -n "s/  var VERSION = '\([^']*\)';/\1/p" web/static/kp.js)" || { echo 'VERSION and kp.js disagree'; exit 1; }
+	@test "$(VERSION)" = "$$(sed -n "s/ *var VERSION = '\([^']*\)';/\1/p" web/static/kp.js)" || { echo 'VERSION and kp.js disagree'; exit 1; }
 
-fmt: ## Format Go source files
+fmt: fmt-plugin ## Format Go and plugin source files
 	gofmt -w cmd internal web
+
+node_modules/.package-lock.json: package.json package-lock.json
+	npm ci --ignore-scripts --no-audit --no-fund
+
+build-plugin: node_modules/.package-lock.json ## Build the readable ES5 plugin from web/plugin sources
+	npm run build:plugin
+
+check-plugin: node_modules/.package-lock.json ## Lint sources, verify ES5 and check the committed bundle is up to date
+	npm run check
+
+fmt-plugin: node_modules/.package-lock.json ## Format plugin sources and rebuild kp.js
+	npm run format
+	npm run build:plugin
 
 test: test-go test-js test-deploy test-release ## Run server and plugin tests
 
 test-go: ## Run Go tests with race detector
-	go test -race ./...
+	go test -race $(GO_PACKAGES)
 
-test-js: ## Run JavaScript plugin tests (Node.js is only a development tool)
+test-js: check-plugin ## Run JavaScript plugin tests (Node.js is only a development tool)
 	node --test test/*.test.js
 
 test-deploy: ## Verify image deployment, rollback and restricted SSH commands
@@ -42,11 +58,11 @@ coverage: coverage-go coverage-js ## Require 100% Go statements and JS lines, br
 
 coverage-go: ## Require exactly 100% Go statement coverage, with race detector
 	@mkdir -p coverage
-	go test -race -covermode=atomic -coverprofile=coverage/go.out ./...
+	go test -race -covermode=atomic -coverprofile=coverage/go.out $(GO_PACKAGES)
 	go tool cover -func=coverage/go.out
 	@awk 'NR > 1 && $$2 > 0 && $$3 == 0 {missing++} END {if (missing) {print "FAIL: " missing " uncovered Go statement blocks"; exit 1}}' coverage/go.out
 
-coverage-js: ## Require 100% JavaScript lines, branches and functions
+coverage-js: check-plugin ## Require 100% JavaScript lines, branches and functions
 	node --experimental-test-coverage --test-coverage-include=web/static/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js
 
 build: ## Build a standalone Go binary containing the plugin assets

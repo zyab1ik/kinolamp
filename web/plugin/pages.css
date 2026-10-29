@@ -1,0 +1,162 @@
+.kp-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5em 2em;
+  box-sizing: border-box;
+}
+.kp-page__head {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  margin-bottom: 0.7em;
+}
+.kp-page__title {
+  font-size: 1.8em;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.kp-page__status {
+  opacity: 0.65;
+  margin-bottom: 1em;
+}
+.kp-page > .scroll {
+  flex: 1;
+  min-height: 0;
+}
+.kp-page__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1.5em;
+  padding: 0.4em;
+}
+.kp-page__card {
+  min-width: 0;
+}
+.kp-page__poster {
+  height: 0;
+  padding-bottom: 150%;
+  position: relative;
+  border-radius: 0.6em;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  outline: 0.18em solid transparent;
+  outline-offset: 0.25em;
+}
+.kp-page__poster img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kp-page__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+  font-size: 2em;
+}
+.kp-page__card.focus .kp-page__poster {
+  outline-color: currentColor;
+}
+.kp-page__name {
+  margin-top: 0.85em;
+  font-size: 0.95em;
+  line-height: 1.35;
+}
+.kp-page__meta {
+  opacity: 0.55;
+  font-size: 0.75em;
+  margin-top: 0.3em;
+}
+@media (max-width: 800px) {
+  .kp-page {
+    padding: 1em;
+  }
+  .kp-page__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .kp-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.kp-page__details {
+  font-size: 1em;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+.kp-page__description {
+  max-width: 65em;
+  font-size: 1.05em;
+  line-height: 1.55;
+  white-space: pre-line;
+  margin: 0.6em 0 1.5em;
+}
+.kp-page__description:empty,
+.kp-page__details:empty {
+  display: none;
+}
+.kp-page__grid[data-layout='seasons'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.kp-page__grid[data-layout='seasons'] .kp-page__poster {
+  padding-bottom: 56.25%;
+}
+.kp-page__grid[data-layout='episodes'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kp-page__grid[data-layout='episodes'] .kp-page__poster {
+  padding-bottom: 56.25%;
+}
+.kp-page__grid[data-layout='episodes'] .kp-page__name,
+.kp-page__grid[data-layout='seasons'] .kp-page__name {
+  font-size: 1.15em;
+  font-weight: 600;
+}
+.kp-page__meta {
+  font-size: 0.95em;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+@media (max-width: 800px) {
+  .kp-page__grid[data-layout='episodes'],
+  .kp-page__grid[data-layout='seasons'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .kp-page__grid[data-layout='episodes'] {
+    grid-template-columns: 1fr;
+  }
+}
+.kp-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  margin: 0.2em 0 1.2em;
+}
+.kp-page__action {
+  font-size: 1em;
+  padding: 0.6em 1em;
+  border-radius: 0.35em;
+  background: rgba(255, 255, 255, 0.09);
+  line-height: 1.2;
+}
+.kp-page__action.focus {
+  background: #fff;
+  color: #1d1f20;
+}
+.kp-page__grid[data-layout='folders'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.kp-page__grid[data-layout='folders'] .kp-page__poster {
+  padding-bottom: 56.25%;
+}
+.kp-page__grid[data-layout='folders'] .kp-page__placeholder {
+  font-size: 3em;
+  color: #9cebc9;
+}
