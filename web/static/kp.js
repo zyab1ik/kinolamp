@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.5 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.6 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.5';
+  var VERSION = '0.3.6';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -182,7 +182,7 @@
     return { get: get, save: save, clear: clear, label: label };
   }
 
-  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}.kp-page__details{font-size:1em;opacity:.8;line-height:1.5}.kp-page__description{max-width:65em;font-size:1.05em;line-height:1.55;white-space:pre-line;margin:.6em 0 1.5em}.kp-page__description:empty,.kp-page__details:empty{display:none}.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(4,minmax(0,1fr))}.kp-page__grid[data-layout=seasons] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes]{grid-template-columns:repeat(3,minmax(0,1fr))}.kp-page__grid[data-layout=episodes] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes] .kp-page__name,.kp-page__grid[data-layout=seasons] .kp-page__name{font-size:1.15em;font-weight:600}.kp-page__meta{font-size:.95em;opacity:.75;line-height:1.4}@media(max-width:800px){.kp-page__grid[data-layout=episodes],.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid[data-layout=episodes]{grid-template-columns:1fr}}';
+  var PAGE_STYLES = '.kp-page{height:100%;display:flex;flex-direction:column;padding:1.5em 2em;box-sizing:border-box}.kp-page__head{display:flex;align-items:center;gap:1em;margin-bottom:.7em}.kp-page__title{font-size:1.8em;font-weight:600;line-height:1.2}.kp-page__status{opacity:.65;margin-bottom:1em}.kp-page>.scroll{flex:1;min-height:0}.kp-page__grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5em;padding:.4em}.kp-page__card{min-width:0}.kp-page__poster{height:0;padding-bottom:150%;position:relative;border-radius:.6em;background:rgba(255,255,255,.07);overflow:hidden;outline:.18em solid transparent;outline-offset:.25em}.kp-page__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.kp-page__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.4;font-size:2em}.kp-page__card.focus .kp-page__poster{outline-color:currentColor}.kp-page__name{margin-top:.85em;font-size:.95em;line-height:1.35}.kp-page__meta{opacity:.55;font-size:.75em;margin-top:.3em}@media(max-width:800px){.kp-page{padding:1em}.kp-page__grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}.kp-page__details{font-size:1em;opacity:.8;line-height:1.5}.kp-page__description{max-width:65em;font-size:1.05em;line-height:1.55;white-space:pre-line;margin:.6em 0 1.5em}.kp-page__description:empty,.kp-page__details:empty{display:none}.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(4,minmax(0,1fr))}.kp-page__grid[data-layout=seasons] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes]{grid-template-columns:repeat(3,minmax(0,1fr))}.kp-page__grid[data-layout=episodes] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=episodes] .kp-page__name,.kp-page__grid[data-layout=seasons] .kp-page__name{font-size:1.15em;font-weight:600}.kp-page__meta{font-size:.95em;opacity:.75;line-height:1.4}@media(max-width:800px){.kp-page__grid[data-layout=episodes],.kp-page__grid[data-layout=seasons]{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.kp-page__grid[data-layout=episodes]{grid-template-columns:1fr}}.kp-page__toolbar{display:flex;flex-wrap:wrap;gap:.6em;margin:.2em 0 1.2em}.kp-page__action{font-size:1em;padding:.6em 1em;border-radius:.35em;background:rgba(255,255,255,.09);line-height:1.2}.kp-page__action.focus{background:#fff;color:#1d1f20}.kp-page__grid[data-layout=folders]{grid-template-columns:repeat(4,minmax(0,1fr))}.kp-page__grid[data-layout=folders] .kp-page__poster{padding-bottom:56.25%}.kp-page__grid[data-layout=folders] .kp-page__placeholder{font-size:3em;color:#9cebc9}';
 
   function createNativePages(Lampa, $, navigation, load, activate) {
     if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) return null;
@@ -191,39 +191,59 @@
     Lampa.Component.add('kinolamp', function (object) {
       var self = this;
       var alive = true;
+      var suspended = false;
+      var request = 0;
       var last = false;
       var labels = [];
+      var isStale = null;
       var view = $('<div class="kp-page"></div>');
       var head = $('<div class="kp-page__head"></div>');
       var title = $('<div class="kp-page__title"></div>').text('KinoPub');
       var status = $('<div class="kp-page__status" role="status"></div>').text('Загрузка…');
       var grid = $('<div class="kp-page__grid"></div>');
+      var toolbar = $('<div class="kp-page__toolbar"></div>');
       var details = $('<div class="kp-page__details"></div>');
       var description = $('<div class="kp-page__description"></div>');
       var scroll = new Lampa.Scroll({ mask: true, over: true });
       head.append(title);
+      scroll.append(toolbar);
       scroll.append(details);
       scroll.append(description);
       scroll.append(grid);
       view.append(head).append(status).append(scroll.render());
       this.create = function () {
+        var expected = ++request;
+        status.text('Загрузка…');
         self.activity.loader(true);
         load(object, function (error, data) {
-          if (!alive) return;
+          if (!alive || expected !== request) return;
           self.activity.loader(false);
           grid.empty();
+          toolbar.empty(); last = false;
           labels = [];
-          if (error) status.text(error);
+          isStale = null;
+          function buttons(actions) {
+            actions.forEach(function (action) {
+              var button = $('<div class="simple-button selector kp-page__action"></div>').text(action.title);
+              button.on('hover:focus', function () { last = button[0]; scroll.update(button, true); });
+              button.on('hover:enter', function () { if (alive && !suspended) action.run(); });
+              toolbar.append(button);
+              if (!last) last = button[0];
+            });
+          }
+          if (error) { title.text('KinoPub'); details.text(''); description.text(''); status.text(error); buttons([{ title: 'Повторить', run: self.create }]); }
           else {
+            isStale = data.isStale || null;
             title.text(data.title);
             details.text(data.details || '');
             description.text(data.description || '');
             grid.attr('data-layout', data.layout || 'posters');
-            status.text(data.rows.length ? (data.hint || 'Выбери подходящий результат.') : 'Ничего не найдено. Вернись назад и выбери другой материал.');
+            buttons(data.actions || []);
+            status.text(data.rows.length ? (data.hint || 'Выбери подходящий результат.') : data.empty || 'Ничего не найдено. Вернись назад и выбери другой материал.');
             data.rows.forEach(function (row) {
               var card = $('<div class="kp-page__card selector"></div>');
               var poster = $('<div class="kp-page__poster"></div>');
-              poster.append($('<span class="kp-page__placeholder"></span>').text('▶'));
+              poster.append($('<span class="kp-page__placeholder"></span>').text(row.symbol || '▶'));
               if (httpsURL(row.poster)) {
                 poster.append($('<img loading="lazy" alt="">').attr('src', row.poster).on('error', function () { $(this).remove(); }));
               }
@@ -233,16 +253,19 @@
               labels.push({ node: meta, row: row });
               if (!last) last = card[0];
               card.on('hover:focus', function () { last = card[0]; scroll.update(card, true); });
-              card.on('hover:enter', function () { activate(row); });
+              card.on('hover:enter', function () { if (alive && !suspended) activate(row); });
+              if (row.menu) card.on('hover:long', function () { if (alive && !suspended) row.menu(); });
               grid.append(card);
             });
           }
-          self.activity.toggle();
+          if (!suspended) self.activity.toggle();
         });
       };
       this.start = function () {
         if (!alive) return;
+        suspended = false;
         active = self;
+        if (isStale && isStale()) { self.create(); return; }
         labels.forEach(function (label) { label.node.text(typeof label.row.subtitle === 'function' ? label.row.subtitle() : label.row.subtitle); });
         Lampa.Controller.add('content', {
           toggle: function () { Lampa.Controller.collectionSet(view); Lampa.Controller.collectionFocus(last, view); },
@@ -255,15 +278,17 @@
         Lampa.Controller.toggle('content');
       };
       this.render = function () { return view; };
-      this.pause = function () {};
+      this.pause = function () { suspended = true; if (active === self) active = null; };
       this.stop = function () {};
       this.destroy = function () { alive = false; if (active === self) active = null; scroll.destroy(); view.remove(); };
     });
     return {
       show: function (route) {
         // Activity history must contain only route data, never DOM nodes, callbacks or API tokens.
-        Lampa.Activity.push({ component: 'kinolamp', title: 'KinoPub', kp_view: route.view, kp_query: route.query, kp_id: route.id, kp_season: route.season });
+        Lampa.Activity.push({ component: 'kinolamp', title: 'KinoPub', kp_view: route.view, kp_query: route.query, kp_id: route.id, kp_season: route.season, kp_section: route.section, kp_page: route.page, kp_genre: route.genre, kp_genre_title: route.genreTitle, kp_quality: route.quality, kp_quality_title: route.qualityTitle, kp_folder: route.folder });
       },
+      current: function () { return active; },
+      refresh: function () { if (active) active.create(); },
       resume: function () { if (active) active.start(); }
     };
   }
@@ -766,7 +791,129 @@
       catch (_) { notify('Не удалось запустить плеер Lampa.'); }
     }
 
+    var bookmarkRevision = 0;
+    function openCatalog() {
+      if (!pages) { notify('Для каталога обнови Lampa: нужны нативные страницы приложения.'); return; }
+      if (!client.hasToken()) { Lampa.Controller.toggle('settings'); Lampa.Settings.create('kp_self'); notify('Сначала войди в KinoPub, затем открой каталог.'); return; }
+      pages.show({ view: 'catalog', section: 'new', page: 1 });
+    }
+    function catalogRoute(route, changes) {
+      var result = { view: 'catalog', section: route.kp_section || 'new', page: route.kp_page || 1, query: route.kp_query || '', genre: route.kp_genre || '', genreTitle: route.kp_genre_title || '', quality: route.kp_quality || '', qualityTitle: route.kp_quality_title || '', folder: route.kp_folder || '' };
+      Object.keys(changes).forEach(function (key) { result[key] = changes[key]; });
+      return result;
+    }
+    function catalogSearch(route) {
+      if (!Lampa.Input || !Lampa.Input.edit) { notify('В этой сборке Lampa недоступна клавиатура поиска.'); return; }
+      var owner = pages.current();
+      Lampa.Input.edit({ title: 'Поиск в KinoPub', value: route.kp_query || '', free: true, nosave: true, nomic: true }, function (value) {
+        if (pages.current() !== owner) return;
+        pages.resume();
+        var query = String(value || '').trim().slice(0, 100);
+        if (!query) return;
+        if (query.length < 3) { notify('Введи минимум три символа.'); return; }
+        pages.show(catalogRoute(route, { section: 'search', query: query, page: 1, folder: '', genre: '', genreTitle: '', quality: '', qualityTitle: '' }));
+      });
+    }
+    function catalogFilters(route) {
+      var owner = pages.current();
+      menu('Фильтры KinoPub', [
+        { title: 'Жанр: ' + (route.kp_genre_title || 'Все'), run: function () { choose('/genres', 'genre', 'genreTitle'); } },
+        { title: 'Качество: ' + (route.kp_quality_title || 'Любое'), run: function () { choose('/references/video-quality', 'quality', 'qualityTitle'); } },
+        { title: 'Сбросить фильтры', run: function () { pages.show(catalogRoute(route, { page: 1, genre: '', genreTitle: '', quality: '', qualityTitle: '' })); } }
+      ]);
+      function choose(path, key, label) {
+        client.api(path, {}, function (error, json) {
+          if (pages.current() !== owner) return;
+          if (error) { notify(errorMessage(error)); return; }
+          var values = Array.isArray(json) ? json : json.items || [];
+          menu(key === 'genre' ? 'Жанр' : 'Качество', [{ title: 'Все', run: function () { select('', ''); } }].concat(values.map(function (value) {
+            return { title: value.title, run: function () { select(value.id, value.title); } };
+          })));
+        });
+        function select(id, title) { if (pages.current() !== owner) return; var changes = { page: 1 }; changes[key] = id; changes[label] = title; pages.show(catalogRoute(route, changes)); }
+      }
+    }
+    function bookmarkMenu(item) {
+      var owner = pages.current();
+      client.api('/bookmarks', {}, function (error, json) {
+        if (pages.current() !== owner) return;
+        if (error) { notify(errorMessage(error)); return; }
+        var folders = json.items || [];
+        client.api('/bookmarks/get-item-folders', { item: item.id }, function (error, memberships) {
+          if (pages.current() !== owner) return;
+          if (error) { notify(errorMessage(error)); return; }
+          var present = (memberships.folders || []).map(function (folder) { return String(folder.id); });
+          var choices = folders.map(function (folder) {
+            var contains = present.indexOf(String(folder.id)) !== -1;
+            return { title: (contains ? '✓ Удалить из «' : 'Добавить в «') + folder.title + '»', run: function () { change(folder.id, contains); } };
+          });
+          if (!choices.length) choices.push({ title: 'Создать папку «Избранное» и добавить', run: function () {
+            if (pages.current() !== owner) return;
+            client.api('/bookmarks/create', { title: 'Избранное' }, function (error, result) {
+              if (!error && result.folder && result.folder.id) bookmarkRevision++;
+              if (pages.current() !== owner) return;
+              if (error || !result.folder || !result.folder.id) { notify('Не удалось создать папку KinoPub. Повтори позже.'); return; }
+              change(result.folder.id, false);
+            }, false, true);
+          } });
+          menu('Закладки KinoPub · ' + item.title, choices);
+        });
+      });
+      function change(folder, remove) {
+        if (pages.current() !== owner) return;
+        client.api(remove ? '/bookmarks/remove-item' : '/bookmarks/add', { item: item.id, folder: folder }, function (error) {
+          if (!error) bookmarkRevision++;
+          if (pages.current() !== owner) return;
+          if (error) { notify(errorMessage(error)); return; }
+          notify(remove ? 'Удалено из папки KinoPub.' : 'Добавлено в папку KinoPub.');
+          pages.refresh();
+        }, false, true);
+      }
+    }
+    function catalogRows(route, done) {
+      var loadedRevision = bookmarkRevision;
+      var loadedGeneration = client.generation();
+      var names = { new: 'Новинки', movies: 'Фильмы', series: 'Сериалы', search: 'Поиск', folders: 'Избранное', folder: 'Избранное' };
+      var section = Object.prototype.hasOwnProperty.call(names, route.kp_section) ? route.kp_section : 'new';
+      var page = Math.min(10000, Math.max(1, Math.floor(Number(route.kp_page) || 1)));
+      var actions = ['new', 'movies', 'series', 'search', 'folders'].map(function (name) {
+        return { title: (section === name ? '✓ ' : '') + names[name], run: function () {
+          if (name === 'search') catalogSearch(route);
+          else pages.show(catalogRoute(route, { section: name, page: 1, query: '', folder: '', genre: '', genreTitle: '', quality: '', qualityTitle: '' }));
+        } };
+      });
+      var bookmarks = section === 'folder' || section === 'folders';
+      var params = { page: page, perpage: 20 };
+      var path = '/items';
+      if (section === 'search') { path += '/search'; params.q = String(route.kp_query || '').slice(0, 100); }
+      else if (bookmarks) { path = section === 'folders' ? '/bookmarks' : '/bookmarks/' + encodeURIComponent(route.kp_folder); params = {}; }
+      else {
+        params.sort = section === 'new' ? 'created-' : 'updated-';
+        if (section === 'movies') params.type = 'movie';
+        if (section === 'series') params.type = 'serial';
+        if (route.kp_genre) params.genre = route.kp_genre;
+        if (route.kp_quality) params['quality[]'] = route.kp_quality;
+        actions.push({ title: 'Фильтры', run: function () { catalogFilters(route); } });
+      }
+      client.api(path, params, function (error, json) {
+        if (error) { done(errorMessage(error)); return; }
+        var items = json.items || [];
+        var total = Math.min(10000, Math.max(1, Math.floor(Number(json.pagination && json.pagination.total) || 1)));
+        if (bookmarks) { total = Math.max(1, Math.ceil(items.length / 20)); items = items.slice((page - 1) * 20, page * 20); }
+        function pagination(number, title) { actions.push({ title: title, run: function () { pages.show(catalogRoute(route, { section: section, page: number })); } }); }
+        if (page > 1) pagination(page - 1, '← Предыдущая страница');
+        if (page < total) pagination(page + 1, 'Следующая страница →');
+        done(null, { isStale: function () { return loadedGeneration !== client.generation() || bookmarks && loadedRevision !== bookmarkRevision; }, title: 'KinoPub · ' + (section === 'search' ? '«' + params.q + '»' : section === 'folder' && json.folder ? json.folder.title : names[section]), details: ['Страница ' + page + ' из ' + total, !bookmarks && section !== 'search' && route.kp_genre_title, !bookmarks && section !== 'search' && route.kp_quality_title].filter(Boolean).join(' · '), hint: section === 'folders' ? 'Выбери папку закладок своего аккаунта KinoPub.' : 'Долгое нажатие на карточку — закладки KinoPub. Озвучку выбирай в плеере.', empty: bookmarks ? 'Пока пусто. Добавляй материалы долгим нажатием на карточку в каталоге.' : 'Ничего не найдено. Измени поиск или фильтры.', layout: section === 'folders' ? 'folders' : 'posters', actions: actions, rows: items.map(function (item) {
+          if (section === 'folders') return { title: item.title, subtitle: 'Материалов: ' + (Number(item.count) || 0), symbol: '★', next: { view: 'catalog', section: 'folder', folder: item.id, page: 1 } };
+          var image = item.posters || {};
+          var types = { movie: 'Фильм', serial: 'Сериал', documovie: 'Документальный фильм', docuserial: 'Документальный сериал', concert: 'Концерт', tvshow: 'ТВ-шоу', '3D': '3D' };
+          return { title: item.title, subtitle: [item.year, types[item.type], Number(item.quality) > 100 ? item.quality + 'p' : ''].filter(Boolean).join(' · '), poster: String(image.medium || image.big || image.small || '').replace(/^http:/, 'https:'), next: { view: 'item', id: item.id }, menu: function () { bookmarkMenu(item); } };
+        }) });
+      });
+    }
+
     function pageRows(route, done) {
+      if (route.kp_view === 'catalog') { catalogRows(route, done); return; }
       function imageURL(value) { return typeof value === 'string' ? value.replace(/^http:/, 'https:') : ''; }
       function poster(item) { return imageURL(item.posters && (item.posters.medium || item.posters.big || item.posters.small)); }
       function minutes(seconds) { return seconds > 0 ? Math.ceil(seconds / 60) + ' мин' : ''; }
@@ -838,6 +985,7 @@
       client.logout(); Lampa.Settings.update(); notify('Локальная сессия удалена. Отзыв устройства доступен на kino.pub.');
     });
     action('advanced', 'Дополнительно', function () { Lampa.Settings.create('kp_self_advanced', { onBack: function () { Lampa.Settings.create('kp_self'); } }); });
+    action('catalog', 'Открыть каталог KinoPub', openCatalog, true);
     Lampa.Template.add('settings_kp_self_diagnostics', '<div></div>');
     action('diagnostics', 'Диагностика воспроизведения', function () {
       Lampa.Settings.create('kp_self_diagnostics', { onBack: function () { Lampa.Settings.create('kp_self_advanced'); } });
@@ -921,6 +1069,16 @@
       } });
     });
     pages = createNativePages(Lampa, $, root.Navigator, pageRows, activatePageRow);
+    if (pages && Lampa.Menu && Lampa.Menu.addButton) {
+      var catalogMenuAdded = false;
+      function addCatalogMenu() {
+        if (catalogMenuAdded) return;
+        catalogMenuAdded = true;
+        Lampa.Menu.addButton(icon, 'KinoPub', openCatalog).attr('data-action', 'kinolamp');
+      }
+      if (root.appready) addCatalogMenu();
+      else Lampa.Listener.follow('app', function (event) { if (event && event.type === 'ready') addCatalogMenu(); });
+    }
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
