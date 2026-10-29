@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.3 — MIT. No telemetry or remote script loading. */
+/* Kinolamp 0.3.4 — MIT. No telemetry or remote script loading. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -9,7 +9,7 @@
   }
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  var VERSION = '0.3.3';
+  var VERSION = '0.3.4';
   var API = 'https://api.service-kp.com';
   var PREFIX = 'kp_self_';
   // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -54,6 +54,18 @@
   function audioTitle(audio, index) {
     return [audio.lang, audio.type && (audio.type.short_title || audio.type.title), audio.author && audio.author.title, audio.codec]
       .filter(Boolean).join(' · ') || ('Дорожка ' + (index + 1));
+  }
+  function voiceIdentity(audio) {
+    return JSON.stringify([audio.lang || '', audio.type && (audio.type.id || audio.type.title) || '', audio.author && (audio.author.id || audio.author.title) || '', audio.codec || '']).toLowerCase();
+  }
+  function episodeQueue(item) {
+    var result = [];
+    (item.seasons || []).forEach(function (season, si) {
+      (season.episodes || []).forEach(function (video, ei) {
+        result.push({ video: video, context: { kind: 'episode', season: season.number === undefined ? si + 1 : season.number, number: video.number || ei + 1 } });
+      });
+    });
+    return result.sort(function (a, b) { return a.context.season - b.context.season || a.context.number - b.context.number; });
   }
 
   function matchItem(movie, items) {
@@ -303,6 +315,17 @@
     var progress = createProgress(Lampa.Storage);
     var pages = null;
     var session = null;
+    var navigation = 0;
+    var queueOwner = null;
+    if (Lampa.Player.listener) {
+      Lampa.Player.listener.follow('create', function () { navigation++; });
+      Lampa.Player.listener.follow('destroy', function () { navigation++; });
+      Lampa.Player.listener.follow('start', function (work) {
+        if (queueOwner && work && work._kinolampQueueId === queueOwner.id) {
+          queueOwner.entries.forEach(function (entry) { if (entry !== work) entry.url = entry._kinolampLoad; });
+        }
+      });
+    }
     var canTrack = !!(Lampa.Player.listener && Lampa.PlayerVideo && Lampa.PlayerVideo.listener && Lampa.PlayerVideo.to);
     function saveSession(ended) {
       if (session && session.ready) { session.ended = session.ended || ended; progress.save(session.key, session.time, session.duration, session.ended); }
@@ -480,37 +503,52 @@
     }
     function openVideo(item, video, back, context, automatic) {
       if (pages) back = pages.resume;
-      var playback = { key: mediaKey(item, video, context), time: 0 };
+      var transition = automatic && typeof automatic === 'object' ? automatic : null;
+      var playback = { key: mediaKey(item, video, context), time: 0, context: context, voice: '', accept: transition && transition.accept };
+      function unavailable(message) { if (transition && !transition.valid()) return; notify(message); if (transition) transition.fail(); }
       function choose(data) {
+        if (transition && !transition.valid()) return;
         var proxy = client.get('proxy_enabled') === true || client.get('proxy_enabled') === 'true';
-        var maxHeight = Number(client.get('quality')) || 1080;
+        var maxHeight = transition ? transition.height : Number(client.get('quality')) || 1080;
         var options = streams(data.files, proxy, maxHeight);
-        if (!options.length) { notify(proxy ? 'Нет HTTPS HLS4-ссылок. Отключи HLS-прокси или проверь данные KinoPub.' : 'Нет HTTPS-ссылок на видео.'); return; }
-        var choices = options.map(function (stream) {
-          return { title: (stream.height ? stream.height + 'p' : 'Авто') + ' · ' + stream.format.toUpperCase(), run: function () {
-            if (!proxy) { play(item, video, data, stream.url, playback, options); return; }
+        if (!options.length) { unavailable(proxy ? 'Нет HTTPS HLS4-ссылок. Отключи HLS-прокси или проверь данные KinoPub.' : 'Нет HTTPS-ссылок на видео.'); return; }
+        if (transition && options[0].height > maxHeight) { unavailable('В следующей серии нет качества в выбранном ограничении.'); return; }
+        function selectStream(stream) {
+            playback.height = stream.height || maxHeight;
             var audios = video.audios || data.audios || [];
+            playback.audios = audios;
+            if (transition) {
+              var matching = transition.voice ? audios.filter(function (audio) { return voiceIdentity(audio) === transition.voice; }) : [];
+              if (transition.voice && !matching.length) notify('Предыдущая озвучка недоступна в этой серии. Выбрана первая доступная.');
+              var selected = matching[0] || audios[0];
+              playback.voice = selected ? voiceIdentity(selected) : '';
+              if (proxy) { prepareProxy(item, video, data, stream, selected ? Number(selected.index) || audios.indexOf(selected) + 1 : 0, Math.min(playback.height, maxHeight), playback, unavailable); return; }
+            }
+            if (!proxy) { play(item, video, data, stream.url, playback, options); return; }
             var tracks = audios.map(function (audio, index) {
               return { title: audioTitle(audio, index), run: function () {
-                prepareProxy(item, video, data, stream, Number(audio.index) || index + 1, Math.min(stream.height || maxHeight, maxHeight), playback);
+                playback.voice = voiceIdentity(audio);
+                prepareProxy(item, video, data, stream, Number(audio.index) || index + 1, Math.min(stream.height || maxHeight, maxHeight), playback, unavailable);
               } };
             });
             if (tracks.length) menu('Озвучка', tracks, function () { choose(data); });
-            else prepareProxy(item, video, data, stream, 0, Math.min(stream.height || maxHeight, maxHeight), playback);
-          } };
-        });
-        if (automatic) choices[0].run();
-        else menu('Качество', choices, back);
+            else prepareProxy(item, video, data, stream, 0, Math.min(stream.height || maxHeight, maxHeight), playback, unavailable);
+        }
+        if (automatic) selectStream(options[0]);
+        else menu('Качество', options.map(function (stream) {
+          return { title: (stream.height ? stream.height + 'p' : 'Авто') + ' · ' + stream.format.toUpperCase(), run: function () { selectStream(stream); } };
+        }), back);
       }
       function load() {
         if (video.files && video.files.length) { choose(video); return; }
         var mediaId = video.id || video.media_id;
-        if (!mediaId) { notify('KinoPub не вернул media ID или ссылки.'); return; }
+        if (!mediaId) { unavailable('KinoPub не вернул media ID или ссылки.'); return; }
         client.api('/items/media-links', { mid: mediaId }, function (error, json) {
-          if (error) notify(errorMessage(error)); else choose(json);
+          if (error) unavailable(errorMessage(error)); else choose(json);
         });
       }
       var previous = progress.get(playback.key);
+      if (transition) { playback.time = previous && !previous.watched ? previous.time : 0; load(); return; }
       if (!previous) { load(); return; }
       var entries = [];
       if (!previous.watched) entries.push({ title: progress.label(playback.key), run: function () {
@@ -523,18 +561,18 @@
       if (automatic) { entries[0].run(); return; }
       menu(previous.watched ? 'Уже просмотрено' : 'Продолжить просмотр', entries, back);
     }
-    function prepareProxy(item, video, data, stream, voice, height, playback) {
+    function prepareProxy(item, video, data, stream, voice, height, playback, unavailable) {
       var base = String(client.get('proxy_url')).replace(/\/+$/, '');
       var token = client.get('proxy_token');
       if (!httpsURL(base) || !/^https:\/\/[^/]+$/.test(base) || !token || token.length < 32) {
-        notify('Для HLS-прокси укажи HTTPS-адрес своего VPS и ключ минимум 32 символа.'); return;
+        unavailable('Для HLS-прокси укажи HTTPS-адрес своего VPS и ключ минимум 32 символа.'); return;
       }
       transport('POST', base + '/api/manifests', JSON.stringify({ master: stream.url, voice: voice, maxHeight: height }),
         { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, function (error, json) {
           // A proxy response may only return a ticket at the configured origin.
           var prefix = base + '/hls/';
           if (error || !json || typeof json.url !== 'string' || json.url.indexOf(prefix) !== 0 || !/^[a-f0-9]{64}\.m3u8$/.test(json.url.slice(prefix.length))) {
-            notify('HLS-прокси недоступен. Проверь ключ, ALLOWED_ORIGINS и CDN_HOSTS на VPS.'); return;
+            unavailable('HLS-прокси недоступен. Проверь ключ, ALLOWED_ORIGINS и CDN_HOSTS на VPS.'); return;
           }
           play(item, video, data, json.url, playback);
         });
@@ -549,13 +587,50 @@
         qualities.forEach(function (stream) { work.quality[stream.height ? stream.height + 'p' : 'Авто'] = stream.url; });
       }
       if (canTrack && playback.key) {
-        work._kinolampProgress = playback;
+        work._kinolampProgress = { key: playback.key, time: playback.time };
         work.timeline = { time: playback.time, duration: 0, percent: 0, handler: function (_percent, time, duration) {
-          if (session && session.work === work && session.seek === 0 && session.ready) progress.save(playback.key, time, duration, session.ended);
+          if (session && session.work.timeline === work.timeline && session.seek === 0 && session.ready) progress.save(playback.key, time, duration, session.ended);
         } };
       }
       if (subtitles.length) work.subtitles = subtitles;
-      try { Lampa.Player.play(work); Lampa.Player.playlist([work]); }
+      if (playback.accept) { playback.accept(work, playback); return; }
+      var entries = [work];
+      if (playback.context.kind === 'episode' && Lampa.Player.listener && Lampa.Player.close && playback.key) {
+        var owner = { id: navigation + 1, height: playback.height, voice: playback.voice, current: work, video: video, loading: false };
+        queueOwner = owner;
+        entries = episodeQueue(item).map(function (entry) {
+          var id = mediaKey(item, entry.video, entry.context);
+          var target = id === playback.key ? work : { title: escapeText('s' + entry.context.season + 'e' + entry.context.number + ' · ' + (entry.video.title || '')) };
+          target.season = entry.context.season; target.episode = entry.context.number;
+          target._kinolampQueueId = owner.id;
+          target._kinolampLoad = function (ready) {
+            if (owner.loading || queueOwner !== owner) return;
+            owner.loading = true;
+            var expected = navigation;
+            function current() { return expected === navigation && queueOwner === owner; }
+            function failed() { owner.loading = false; if (current()) Lampa.Player.close(); }
+            client.api('/items/' + encodeURIComponent(item.id), { nolinks: 0 }, function (error, json) {
+              if (!current()) { owner.loading = false; return; }
+              var next = !error && json.item && episodeQueue(json.item).filter(function (candidate) { return mediaKey(json.item, candidate.video, candidate.context) === id; })[0];
+              if (!next) { notify('Следующая серия недоступна. Воспроизведение остановлено.'); failed(); return; }
+              openVideo(json.item, next.video, null, next.context, {
+                height: owner.height, voice: owner.voice, fail: failed, valid: current,
+                accept: function (prepared, options) {
+                  owner.loading = false;
+                  if (!current()) return;
+                  Object.keys(prepared).forEach(function (key) { target[key] = prepared[key]; });
+                  owner.current = target; owner.video = next.video; owner.height = options.height; owner.voice = options.voice;
+                  ready();
+                }
+              });
+            });
+          };
+          if (target !== work) target.url = target._kinolampLoad;
+          return target;
+        });
+        owner.entries = entries;
+      }
+      try { Lampa.Player.play(work); Lampa.Player.playlist(entries); }
       catch (_) { notify('Не удалось запустить плеер Lampa.'); }
     }
 
@@ -667,5 +742,5 @@
     if (Lampa.Manifest) Lampa.Manifest.plugins = { type: 'video', name: 'Kinolamp', version: VERSION, description: 'Личный источник KinoPub без телеметрии' };
     // A direct stream keeps native Lampa audio controls; proxy mode selects before playback.
   }
-  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, matchItem: matchItem, createNativePages: createNativePages, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress };
+  return { install: install, createClient: createClient, escapeText: escapeText, httpsURL: httpsURL, streams: streams, audioTitle: audioTitle, matchItem: matchItem, createNativePages: createNativePages, nameExtension: nameExtension, mediaKey: mediaKey, createProgress: createProgress, episodeQueue: episodeQueue, voiceIdentity: voiceIdentity };
 });
