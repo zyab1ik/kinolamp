@@ -31,6 +31,8 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Install pinned JavaScript development tools
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Check formatting, static analysis and JavaScript syntax
         run: make check
       - name: Validate GitHub Actions workflow
@@ -71,6 +73,8 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Install pinned JavaScript development tools
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run JavaScript tests and coverage
         run: make coverage-js
   container:

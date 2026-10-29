@@ -4,7 +4,7 @@
 
 ## Publish a version
 
-1. Update `VERSION` and the VERSION/header in `web/static/kp.js` in a pull request, for example to `0.3.1`. Adjust the device-version assertion in the plugin test.
+1. Update `VERSION` and `VERSION` in `web/plugin/config.js` in a pull request, for example to `0.3.7`. Run `make build-plugin` to regenerate `web/static/kp.js` and commit it with the sources. Adjust the device-version assertion in the plugin test.
 2. Merge the pull request after CI passes. The main pipeline tests and deploys the verified image, checks public HTTPS, and completes its pipeline summary.
 3. The final **Release** stage automatically packages and publishes the new version. No local tag or manual GitHub release action is required.
 

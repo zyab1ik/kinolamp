@@ -123,7 +123,7 @@ TCP-проброс не требуется, если панель сама пр�
 HTTPS на стороне панели; отдельное шифрование до origin зависит от сети провайдера.
 
 Без Docker: Go 1.27+, `make run`; по умолчанию слушает только `127.0.0.1:3000`.
-`make build` создаёт `bin/kinolamp` со встроенными ресурсами. Параметр `LISTEN_ADDR` меняет адрес прослушивания. Для запуска без Docker переменные из `.env` необходимо передать процессу самостоятельно. Node.js 24+ требуется только для тестов JavaScript. Зависимостей Go/npm нет.
+`make build` создаёт `bin/kinolamp` со встроенными ресурсами. Параметр `LISTEN_ADDR` меняет адрес прослушивания. Для запуска без Docker переменные из `.env` необходимо передать процессу самостоятельно. Node.js 24+ нужен только для разработки: сборки плагина, lint и тестов. У Go-сервера и готового плагина нет внешних runtime-зависимостей; npm-инструменты разработки закреплены в lockfile.
 
 ## Опциональный HLS-прокси
 
@@ -147,7 +147,7 @@ HTTPS на стороне панели; отдельное шифрование 
 
 Применены каталоги из [golang-standards/project-layout](https://github.com/golang-standards/project-layout):
 `cmd/kinolamp` — точка входа; `internal/app` — сервер, конфигурация и HLS;
-`web/static` — плагин и страница установки; `configs` — шаблоны настроек;
+`web/plugin` — читаемые исходники плагина; `web/static` — готовый плагин и страница установки; `configs` — шаблоны настроек;
 `build/package` — Dockerfile; `deployments` — Compose и Caddy;
 `test` — проверки JavaScript; `docs` — документация.
 Подробности и границы пакетов — [docs/architecture.md](docs/architecture.md).
@@ -155,6 +155,24 @@ HTTPS на стороне панели; отдельное шифрование 
 ## Управление через Make
 
 `make help` показывает все команды. Основные: `make run`, `make build`, `make check`, `make test`, `make coverage`, `make docker-build`, `make up`, `make down`, `make logs`, `make health`, `make clean`.
+
+## Разработка плагина
+
+Редактируй модули в `web/plugin`, а не собранный `web/static/kp.js`.
+Вход, API, плеер, каталог, настройки и диагностика разделены по назначению.
+Стили страниц лежат в `web/plugin/pages.css`, иконка — в `web/static/icon.svg`.
+
+```sh
+make fmt-plugin     # единый стиль исходников и пересборка kp.js
+make build-plugin   # только пересборка
+make check-plugin   # ESLint, Prettier, ES5 и совпадение сборки с исходниками
+make coverage-js    # тесты готового файла: строки, ветви и функции — 100%
+```
+
+Make сам установит закреплённые dev-зависимости через `npm ci` при первом запуске.
+Коммить исходники и полученный `kp.js` вместе. Файл остаётся читаемым,
+без минификации и загрузки других скриптов. Для установки в Lampa ссылка не меняется.
+Правила и карта модулей — [docs/plugin-development.md](docs/plugin-development.md).
 
 ## Обновления и проверки
 

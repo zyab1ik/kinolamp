@@ -4,9 +4,19 @@
   "private": true,
   "description": "Personal Lampa KinoPub plugin and optional authenticated HLS reducer",
   "license": "MIT",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check web/static/kp.js"
+    "check": "eslint web/plugin web/static/kp.js scripts/build-plugin.mjs eslint.config.mjs && prettier --check \"web/plugin/**/*.{js,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json && node scripts/build-plugin.mjs --check",
+    "build:plugin": "node scripts/build-plugin.mjs",
+    "format": "eslint web/plugin scripts/build-plugin.mjs eslint.config.mjs --fix && prettier --write \"web/plugin/**/*.{js,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "rollup": "4.66.0"
   }
 }
