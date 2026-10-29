@@ -122,3 +122,27 @@ footer > a { margin-left: auto; color: #93939c; font-size: 13px; text-decoration
 
 .step:last-child { grid-column: 1 / -1; }
 .troubleshooting + .troubleshooting { margin-top: 12px; }
+
+/* Current feature guide and TV setup. */
+.guide-nav { display: flex; flex-wrap: wrap; gap: 16px; }
+.guide-nav a { color: var(--muted); font-size: 13px; text-decoration: none; }
+.guide-nav a:hover { color: var(--accent); }
+.features { padding: 36px 0 48px; border-top: 1px solid var(--border); }
+.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.feature-card { min-width: 0; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: #1e1e21; }
+.feature-card h3 { font-size: 18px; }
+.feature-card p { margin: 0; font-size: 15px; line-height: 1.8; color: var(--muted); }
+.feature-card a { display: inline-block; margin-top: 18px; font-size: 14px; color: var(--accent); }
+.usage { margin-top: 48px; padding: 36px 0 12px; border-top: 1px solid var(--border); }
+.use-case p + p { margin-top: 12px; }
+.section-note { max-width: 260px; font-size: 16px; line-height: 1.6; }
+@media (max-width: 900px) {
+  .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .header { flex-wrap: wrap; padding: 18px 0; }
+  .guide-nav { order: 3; width: 100%; gap: 10px 16px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .features { padding-top: 28px; }
+  .section-note { max-width: none; }
+}

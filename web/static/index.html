@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#171719">
-  <meta name="description" content="Kinolamp — личный плагин KinoPub для Lampa. Подключение, авторизация и настройки.">
-  <title>Kinolamp — KinoPub в твоей Lampa</title>
+  <meta name="description" content="Kinolamp — плагин KinoPub для Lampa на Samsung Tizen. Удобная связка с Media Station X: вход по коду, каталог, закладки и просмотр с пульта.">
+  <title>Kinolamp — KinoPub в Lampa на Samsung Tizen</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -16,15 +16,16 @@
         <img src="./icon.svg" width="40" height="40" alt="">
         <span>kinolamp<span class="brand-dot">.</span></span>
       </a>
+      <nav class="guide-nav" aria-label="По странице"><a href="#features">Возможности</a><a href="#setup">Подключение</a><a href="#usage">Как пользоваться</a></nav>
       <a class="header-link" href="https://cf.lampa.mx/" target="_blank" rel="noreferrer">Открыть Lampa <span aria-hidden="true">↗</span></a>
     </header>
 
     <main>
       <section class="hero" aria-labelledby="title">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot"></span> ТВОЯ LAMPA. ТВОЙ KINOPUB.</p>
-          <h1 id="title">Любимое кино.<br><span>В привычной Lampa.</span></h1>
-          <p class="lead">Подключи KinoPub через Kinolamp — личный плагин на твоём сервере. Без телеметрии и сторонней синхронизации.</p>
+          <p class="eyebrow"><span class="status-dot"></span> SAMSUNG TIZEN · LAMPA · MSX</p>
+          <h1 id="title">KinoPub на Tizen.<br><span>В привычной Lampa.</span></h1>
+          <p class="lead">Kinolamp — плагин KinoPub для Lampa. На Samsung Tizen удобно пользоваться связкой Media Station X (MSX) → Lampa → Kinolamp: каталог, сезоны и просмотр с пульта. Файлы плагина размещаются на твоём сервере.</p>
           <a class="button primary" href="#setup"><span aria-hidden="true">▶</span> Подключить плагин</a>
           <div class="hero-tags"><span>Свой сервер</span><span>HTTPS</span><span>Без телеметрии</span></div>
         </div>
@@ -36,26 +37,49 @@
       </section>
 
       <section class="purpose" aria-labelledby="purpose-title">
-        <div class="section-heading"><div><p class="eyebrow">ЗАЧЕМ НУЖЕН ПЛАГИН</p><h2 id="purpose-title">От карточки в Lampa — к просмотру в KinoPub</h2></div></div>
-        <p class="purpose-lead">Lampa помогает выбрать кино, а Kinolamp подключает к ней твою подписку KinoPub. Плагин подключает KinoPub к штатной кнопке «Смотреть»: фильм с точным совпадением сразу открывается в плеере, сериал — на странице сезонов и серий. Результаты, сезоны и серии открываются полноценными страницами Lampa с постерами и навигацией пультом.</p>
-        <aside class="tv-note"><h3>Особенно удобно на телевизорах с Lampa</h3><p>На Samsung Tizen, LG webOS и других Smart TV отдельный клиент KinoPub бывает сложно установить. Если на телевизоре уже работает Lampa, Kinolamp позволяет подключить подписку KinoPub к привычному интерфейсу и выбирать фильмы и серии с пульта.</p><p>Для некоторых проблемных HLS-потоков на Tizen предусмотрен собственный HLS-прокси. Поддержка видео и звуковых дорожек зависит от модели телевизора и его плеера.</p></aside>
+        <div class="section-heading"><div><p class="eyebrow">ЗАЧЕМ НУЖЕН ПЛАГИН</p><h2 id="purpose-title">KinoPub внутри Lampa — с пульта</h2></div></div>
+        <p class="purpose-lead">Открой собственный каталог KinoPub в левом меню Lampa: новинки, фильмы, сериалы, поиск и избранное. Или нажми штатную кнопку «Смотреть» в карточке Lampa: однозначно найденный фильм откроется в плеере, сериал — на странице сезонов и серий. Если совпадений несколько, выбери нужный результат. Нужна действующая подписка KinoPub.</p>
+        <aside class="tv-note"><h3>Удобно на Samsung Tizen через Media Station X</h3><p>Если Lampa уже настроена в <strong>Media Station X (MSX)</strong>, открой её внутри MSX и добавь Kinolamp в расширения самой Lampa. Так можно пользоваться подпиской KinoPub в привычном интерфейсе с пультом, когда отдельный клиент KinoPub на телевизор установить сложно.</p><div class="case-route">Samsung Tizen → Media Station X → Lampa → Kinolamp</div><p>Плагин также подходит для других устройств с Lampa. Возможности видео и звуковых дорожек зависят от модели телевизора и используемого плеера; конкретную связку проверяй на устройстве. <a href="https://msx.benzac.de/info/?tab=PlatformSupport" target="_blank" rel="noreferrer">Платформы Media Station X ↗</a></p></aside>
         <div class="use-cases">
           <article class="use-case"><span class="case-tag">ПРИМЕР 01 · ФИЛЬМ</span><h3>Нашёл фильм в каталоге Lampa</h3><p>Открой его карточку и нажми «Смотреть». Плагин найдёт фильм по названию и году, затем откроет плеер с сохранённой позиции. Если совпадений несколько, выбери подходящий результат. Качество меняется в плеере.</p><div class="case-route">Карточка → Смотреть → Плеер</div></article>
-          <article class="use-case"><span class="case-tag">ПРИМЕР 02 · СЕРИАЛ</span><h3>Хочешь посмотреть нужную серию</h3><p>Нажми «Смотреть» в карточке сериала, затем выбери сезон и эпизод. При неоднозначном совпадении сначала выбери нужный сериал. Доступные серии откроются прямо в Lampa.</p><div class="case-route">Смотреть → Сезон → Серия → Плеер</div></article>
+          <article class="use-case"><span class="case-tag">ПРИМЕР 02 · СЕРИАЛ</span><h3>Хочешь посмотреть нужную серию</h3><p>Нажми «Смотреть» в карточке сериала, затем выбери сезон и эпизод. При неоднозначном совпадении сначала выбери нужный сериал. У эпизодов доступны название, кадр, длительность и локальный прогресс, если данные есть. Следующую серию можно выбрать в штатном плейлисте Lampa.</p><div class="case-route">Смотреть → Сезон → Серия → Плеер</div></article>
         </div>
         <p class="purpose-footnote">VPS раздаёт файлы плагина. В обычном режиме видео идёт напрямую с CDN KinoPub на устройство. Отдельный HLS-прокси помогает совместимым клиентам с проблемными HLS-потоками: он подготавливает плейлист, а не перекодирует видео. Наличие материала и качество зависят от KinoPub и твоей подписки.</p>
+      </section>
+
+      <section id="features" class="features" aria-labelledby="features-title">
+        <div class="section-heading"><div><p class="eyebrow">УЖЕ РЕАЛИЗОВАНО</p><h2 id="features-title">Всё для привычного просмотра</h2></div></div>
+        <div class="feature-grid">
+          <article class="feature-card"><span class="case-tag">КАТАЛОГ</span><h3>KinoPub в левом меню</h3><p>Новинки, фильмы, сериалы и самостоятельный поиск. Жанр и качество задаются фильтрами, результаты открываются по страницам.</p><a href="#using-catalog">Как открыть каталог →</a></article>
+          <article class="feature-card"><span class="case-tag">ЗАКЛАДКИ</span><h3>Избранное из аккаунта</h3><p>Папки KinoPub и их содержимое. Долгое нажатие на карточку позволяет добавить материал или удалить его из выбранной папки.</p><a href="#using-bookmarks">Как сохранить на потом →</a></article>
+          <article class="feature-card"><span class="case-tag">ПРОГРЕСС</span><h3>Продолжение просмотра</h3><p>Позиция и отметки просмотренного сохраняются локально. В поддерживаемом плеере фильм или серия продолжаются с нужного места.</p><a href="#using-series">О сериях и прогрессе →</a></article>
+          <article class="feature-card"><span class="case-tag">СЕРИАЛЫ</span><h3>Следующая серия</h3><p>Штатный плейлист Lampa, порядок эпизодов и переход между сезонами. Автоматическое продолжение включается настройкой самой Lampa.</p><a href="#using-series">Как перейти дальше →</a></article>
+          <article class="feature-card"><span class="case-tag">ПЛЕЕР</span><h3>Привычное управление</h3><p>Кнопка «Смотреть», выбор качества, доступные субтитры и аудио — через Lampa. У сезонов и серий полноценные страницы с информацией KinoPub.</p><a href="#setup">Подключить плагин →</a></article>
+          <article class="feature-card"><span class="case-tag">ДИАГНОСТИКА</span><h3>Понятнее, где зависло</h3><p>Время запуска, доступные события буферизации и ошибки потоков. Локальный отчёт без токенов и URL, сбор включается отдельно.</p><a href="#using-diagnostics">Как собрать отчёт →</a></article>
+        </div>
       </section>
 
       <section id="setup" class="setup" aria-labelledby="setup-title">
         <div class="section-heading"><div><p class="eyebrow">НАЧНЁМ С ПОДКЛЮЧЕНИЯ</p><h2 id="setup-title">Подключение по шагам</h2></div><span class="section-note">Нужна действующая подписка KinoPub</span></div>
         <p class="purpose-lead">Плагин уже добавлен и показывает «200 Рабочий»? Перезагрузи Lampa и начни с шага 3. Этот статус подтверждает загрузку плагина; вход в KinoPub выполняется отдельно.</p>
         <ol class="steps">
-          <li class="step"><span class="step-number">01</span><div><h3>Открой Lampa по HTTPS</h3><p>Используем <a href="https://cf.lampa.mx/" target="_blank" rel="noreferrer">cf.lampa.mx <span aria-hidden="true">↗</span></a>. При переходе с HTTP расширения и настройки нужно добавить заново: браузер хранит их отдельно для каждого адреса.</p></div></li>
+          <li class="step"><span class="step-number">01</span><div><h3>Открой Lampa на телевизоре или в браузере</h3><p>На Samsung Tizen открой уже настроенную Lampa через <strong>Media Station X (MSX)</strong>. Все следующие шаги выполняются в самой Lampa. В браузере используем <a href="https://cf.lampa.mx/" target="_blank" rel="noreferrer">cf.lampa.mx <span aria-hidden="true">↗</span></a>. При переходе с HTTP расширения и настройки нужно добавить заново: браузер хранит их отдельно для каждого адреса.</p></div></li>
           <li class="step"><span class="step-number">02</span><div><h3>Добавь Kinolamp в расширения</h3><p>В Lampa открой <strong>Настройки → Расширения → Добавить</strong>. Скопируй адрес ниже, вставь его и перезапусти Lampa.</p><label class="field-label" for="plugin-url">Адрес плагина</label><input id="plugin-url" class="plugin-url" type="url" readonly value="https://kinolamp.eu3.filefor.net/kp.js" spellcheck="false"><p class="hint">Выдели адрес и скопируй его. <a href="./kp.js">Открыть kp.js ↗</a></p></div></li>
           <li class="step"><span class="step-number">03</span><div><h3>Получи код в Lampa</h3><p>Вернись из раздела «Расширения» в <strong>Настройки → Kinolamp</strong> и нажми <strong>«Войти в KinoPub»</strong>. Плагин сам запросит и покажет код. <strong>Оставь окно с кодом открытым.</strong></p><p>Client ID и Client Secret уже настроены в плагине. Вручную вводить их или обращаться в поддержку для этого входа не нужно.</p></div></li>
           <li class="step"><span class="step-number">04</span><div><h3>Подтверди код на сайте KinoPub</h3><p>На телефоне или в другой вкладке открой <strong>адрес из окна плагина</strong> — сейчас это <a href="https://kino.watch/device" target="_blank" rel="noreferrer">kino.watch/device ↗</a>. Войди в свой аккаунт KinoPub.</p><p>В разделе <strong>«Активация устройства»</strong> введи код, который показывает Kinolamp, в поле <strong>«Код устройства»</strong> и нажми <strong>«Добавить»</strong>. Код выдаёт плагин в Lampa, а не эта страница.</p></div></li>
-          <li class="step"><span class="step-number">05</span><div><h3>Вернись в Lampa и включи фильм</h3><p>Подожди сообщения <strong>«KinoPub: вход выполнен»</strong> — окно закроется автоматически. Затем открой карточку фильма или сериала, нажми <strong>«Смотреть»</strong>. Однозначно найденный фильм откроется в плеере, сериал — на странице сезонов и серий. Если совпадений несколько, выбери нужный результат. Долгое нажатие «Смотреть» открывает другие источники. В старых сборках Lampa выбери <strong>«Смотреть» → «KinoPub»</strong>.</p><p>Для первого просмотра <strong>HLS-прокси оставь выключенным</strong>. Его настройка нужна только при проблемах воспроизведения на конкретном устройстве.</p></div></li>
+          <li class="step"><span class="step-number">05</span><div><h3>Вернись в Lampa и включи фильм</h3><p>Подожди сообщения <strong>«KinoPub: вход выполнен»</strong> — окно закроется автоматически. Затем открой <strong>левое меню → KinoPub</strong> для отдельного каталога или карточку фильма/сериала в Lampa и нажми <strong>«Смотреть»</strong>. Однозначно найденный фильм откроется в плеере, сериал — на странице сезонов и серий. Если совпадений несколько, выбери нужный результат. Долгое нажатие «Смотреть» открывает другие источники. В старых сборках Lampa выбери <strong>«Смотреть» → «KinoPub»</strong>.</p><p>Для первого просмотра <strong>HLS-прокси оставь выключенным</strong>. Его настройка нужна только при проблемах воспроизведения на конкретном устройстве.</p></div></li>
         </ol>
+      </section>
+
+      <section id="usage" class="usage" aria-labelledby="usage-title">
+        <div class="section-heading"><div><p class="eyebrow">ПОСЛЕ ВХОДА</p><h2 id="usage-title">Как пользоваться Kinolamp</h2></div></div>
+        <div class="use-cases">
+          <article id="using-catalog" class="use-case"><span class="case-tag">01 · НАЙТИ КИНО</span><h3>Открой каталог KinoPub</h3><p>Выбери KinoPub в левом меню Lampa. Сверху доступны «Новинки», «Фильмы», «Сериалы», «Поиск» и «Избранное». Для поиска введи минимум три символа. Кнопка «Фильтры» задаёт жанр и качество в каталоге; озвучку выбирай в плеере.</p><div class="case-route">Левое меню → KinoPub → Поиск или раздел</div></article>
+          <article id="using-bookmarks" class="use-case"><span class="case-tag">02 · СОХРАНИТЬ НА ПОТОМ</span><h3>Удерживай OK на карточке</h3><p>В меню закладок выбери папку аккаунта KinoPub. Если папок ещё нет, отдельное действие создаст «Избранное» и добавит материал. Сохранённые фильмы доступны через «Избранное» в каталоге. Повторное долгое нажатие позволяет удалить материал из конкретной папки.</p><div class="case-route">Карточка → удерживать OK/Enter → Папка</div></article>
+          <article id="using-series" class="use-case"><span class="case-tag">03 · СМОТРЕТЬ СЕРИАЛ</span><h3>Выбери сезон и серию</h3><p>Сохранённая позиция подхватывается автоматически в поддерживаемом плеере. Следующая/предыдущая серия выбирается через штатный плейлист Lampa. Автопереход включается в настройках плейлиста самой Lampa; отдельного переключателя Kinolamp нет.</p><p>Прогресс хранится на этом устройстве. Общий сброс находится в «Настройки → Kinolamp → Дополнительно» и требует подтверждения.</p><div class="case-route">Сезон → Серия → Плеер → Следующая серия</div></article>
+          <article id="using-diagnostics" class="use-case"><span class="case-tag">04 · РАЗОБРАТЬ ЗАВИСАНИЕ</span><h3>Включи локальную диагностику</h3><p>Открой «Настройки → Kinolamp → Дополнительно → Диагностика воспроизведения», включи сбор и заново запусти видео. После проблемы вернись в это меню и открой отчёт. API, свой прокси и последний CDN проверяются отдельной кнопкой вручную.</p><p>До 120 событий хранятся только в памяти. Выключение или перезапуск очищает их. JSON скачивается по нажатию, если клиент поддерживает загрузку файлов. Доступность показателей зависит от плеера; HEAD/CORS-проверка CDN не измеряет скорость видео и не доказывает причину зависания.</p><div class="case-route">Настройки → Kinolamp → Дополнительно → Диагностика</div></article>
+        </div>
+        <p class="purpose-footnote">Прогресс между устройствами пока не синхронизируется. Отдельная постоянная память озвучки для каждого сериала и сезона ещё планируется. Наличие материала, звуковых дорожек и субтитров зависит от KinoPub и плеера.</p>
       </section>
 
       <section class="notes" aria-label="Полезно знать">
@@ -63,6 +87,7 @@
         <article class="note"><span class="note-symbol" aria-hidden="true">◇</span><h3>Токены остаются на устройстве</h3><p>Плагин хранит данные входа в хранилище Lampa. Устанавливай только проверенные расширения: скрипты внутри одной Lampa могут иметь доступ к этим данным.</p></article>
       </section>
       <details class="troubleshooting"><summary>Плагин показывает «404» или не загружается?</summary><p>Проверь адрес плагина: он должен начинаться с <strong>https://</strong> и заканчиваться на <strong>/kp.js</strong>. Открой его в отдельной вкладке — должен появиться JavaScript. Затем перезапусти Lampa. Если ошибка остаётся, проверь доступность сервера и блокировки браузера. KinoPub API также должен разрешать запросы из используемой сборки Lampa.</p></details>
+      <details class="troubleshooting"><summary>Не вижу KinoPub в левом меню или новых пунктов?</summary><p>Полностью перезапусти Lampa, чтобы загрузить обновлённый плагин. Проверь адрес расширения и актуальность сборки Lampa. Каталог также открывается через «Настройки → Kinolamp → Дополнительно → Открыть каталог KinoPub». Для нативных страниц нужна сборка с поддержкой Activity.</p></details>
       <details class="troubleshooting"><summary>Где взять код? На сайте пустое поле. А если код истёк?</summary><p>Код появляется в Lampa после нажатия «Настройки → Kinolamp → Войти в KinoPub». На сайте KinoPub его только подтверждают. Если видишь старые поля Client ID/Secret, перезапусти Lampa для загрузки новой версии плагина. Если код истёк, закрой окно в Lampa и нажми «Войти в KinoPub» заново — появится новый код. Если сервер не принимает общий клиент, плагин покажет отдельное сообщение; проверь обновления Kinolamp или повтори позже.</p></details>
     </main>
     <footer><span>kinolamp<span class="brand-dot">.</span></span><p>Личный источник KinoPub для Lampa</p><a href="#setup">К инструкции ↑</a></footer>
