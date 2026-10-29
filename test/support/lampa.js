@@ -92,6 +92,7 @@ function harness(options = {}) {
   };
   h.ended = function () { h.videoEvents.emit('ended'); if (h.storage.get('playlist_next', false)) h.next(); };
   if (options.noTracking) delete h.Lampa.PlayerVideo;
+  if (options.diagnosticVideo) h.Lampa.PlayerVideo.video = options.diagnosticVideo;
   if (options.noPlayerListener) delete h.Lampa.Player.listener;
   if (options.noManifest) delete h.Lampa.Manifest;
   h.navigation = { canmove() { return !!h.canMove; }, move(direction) { h.moves.push(direction); } };
@@ -115,7 +116,7 @@ function harness(options = {}) {
       backward() { const page = h.pages.pop(); page.destroy(); h.pages.at(-1)?.start(); }
     };
   }
-  plugin.install(h.Lampa, h.$, options.native ? { Navigator: h.navigation } : {});
+  plugin.install(h.Lampa, h.$, { ...(options.native ? { Navigator: h.navigation } : {}), ...options.root });
   h.descendants = function descendants(node) { return [node, ...node.children.flatMap(child => descendants(child))]; };
   h.pageCards = () => h.descendants(h.pages.at(-1).render()).filter(node => String(node.input).includes('kp-page__card selector'));
   h.openCard = index => h.pageCards()[index].handlers['hover:enter']();
