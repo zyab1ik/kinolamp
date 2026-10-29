@@ -95,6 +95,10 @@ function harness(options = {}) {
   if (options.diagnosticVideo) h.Lampa.PlayerVideo.video = options.diagnosticVideo;
   if (options.noPlayerListener) delete h.Lampa.Player.listener;
   if (options.noManifest) delete h.Lampa.Manifest;
+  if (options.catalogMenu) h.Lampa.Menu = { addButton(icon, title, run) { h.menuButton = { icon, title, run }; return h.$('native-menu-button'); } };
+  if (options.emptyMenu) h.Lampa.Menu = {};
+  if (options.keyboard) h.Lampa.Input = { edit(params, done) { h.keyboard = { params, done }; } };
+  if (options.emptyKeyboard) h.Lampa.Input = {};
   h.navigation = { canmove() { return !!h.canMove; }, move(direction) { h.moves.push(direction); } };
   if (options.native) {
     h.components = {};
@@ -108,6 +112,7 @@ function harness(options = {}) {
     };
     h.Lampa.Activity = {
       push(route) {
+        h.pages.at(-1)?.pause();
         h.routes.push(JSON.parse(JSON.stringify(route)));
         const page = new h.components[route.component](route);
         page.activity = { loader(value) { h.loading = value; }, toggle() { if (h.pages.at(-1) === page) page.start(); } };
@@ -116,10 +121,12 @@ function harness(options = {}) {
       backward() { const page = h.pages.pop(); page.destroy(); h.pages.at(-1)?.start(); }
     };
   }
-  plugin.install(h.Lampa, h.$, { ...(options.native ? { Navigator: h.navigation } : {}), ...options.root });
+  plugin.install(h.Lampa, h.$, { appready: true, ...(options.native ? { Navigator: h.navigation } : {}), ...options.root });
   h.descendants = function descendants(node) { return [node, ...node.children.flatMap(child => descendants(child))]; };
   h.pageCards = () => h.descendants(h.pages.at(-1).render()).filter(node => String(node.input).includes('kp-page__card selector'));
   h.openCard = index => h.pageCards()[index].handlers['hover:enter']();
+  h.pageActions = () => h.descendants(h.pages.at(-1).render()).filter(node => String(node.input).includes('kp-page__action'));
+  h.pageAction = title => { const action = h.pageActions().find(node => node.value.replace(/^✓ /, '') === title); assert.ok(action, 'missing page action: ' + title); action.handlers['hover:enter'](); };
   h.action = name => h.settings.find(s => s.param.name === 'kp_self_' + name).onChange();
   h.mount = (movie = { title: 'Film' }, extra = {}) => h.listeners.full({ type: 'complite', data: { movie }, object: { activity: { render() { return h.holder; } } }, ...extra });
   h.click = (movie) => { h.mount(movie); const button = h.nodes.find(n => typeof n.input === 'string' && n.input.includes('kp-self-button') && n.handlers['hover:enter']); if (button) button.handlers['hover:enter'](); };
