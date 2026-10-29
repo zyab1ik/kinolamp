@@ -78,10 +78,19 @@ function harness(options = {}) {
     Listener: { follow(event, cb) { h.listeners[event] = cb; } },
     Manifest: {},
     PlayerVideo: { listener: h.videoEvents, to(time) { h.seeks.push(time); } },
-    Player: { listener: h.playerEvents, play(work) { if (options.playerThrows) throw new Error('player failure'); h.playerEvents.emit('create', { data: work }); h.plays.push(work); h.playerEvents.emit('start', work); }, playlist(entries) { h.playlist = entries; } }
+    Player: { listener: h.playerEvents, play(work) { if (options.playerThrows) throw new Error('player failure'); h.playerEvents.emit('create', { data: work }); h.plays.push(work); h.work = work; h.playerEvents.emit('start', work); }, playlist(entries) { h.playlist = entries; }, playdata() { return h.work; }, close() { h.playerEvents.emit('destroy'); h.closed = true; } }
   };
   if (options.noPlatform) delete h.Lampa.Platform;
   if (options.noPlatformGet) h.Lampa.Platform = {};
+  if (options.noClose) delete h.Lampa.Player.close;
+  h.next = function () {
+    const position = h.playlist.indexOf(h.work);
+    const entry = h.playlist[position + 1];
+    if (!entry) return;
+    const ready = function () { const list = h.playlist; h.playerEvents.emit('destroy'); h.Lampa.Player.play(entry); h.Lampa.Player.playlist(list); };
+    if (typeof entry.url === 'function') entry.url(ready); else ready();
+  };
+  h.ended = function () { h.videoEvents.emit('ended'); if (h.storage.get('playlist_next', false)) h.next(); };
   if (options.noTracking) delete h.Lampa.PlayerVideo;
   if (options.noPlayerListener) delete h.Lampa.Player.listener;
   if (options.noManifest) delete h.Lampa.Manifest;
