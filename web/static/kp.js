@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.8 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.3.9 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.8';
+    var VERSION = '0.3.9';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -2061,7 +2061,10 @@
             });
             recordSource(stream.url);
             playback.height = stream.height || maxHeight;
-            var audios = video.audios || data.audios || [];
+            var audios =
+              Array.isArray(video.audios) && video.audios.length
+                ? video.audios
+                : data.audios || [];
             playback.audios = audios;
             if (transition) {
               var matching = transition.voice
@@ -2075,6 +2078,7 @@
                 );
               }
               var selected = matching[0] || audios[0];
+              playback.selectedAudio = selected;
               playback.voice = selected ? voiceIdentity(selected) : '';
               if (proxy) {
                 prepareProxy(
@@ -2101,6 +2105,7 @@
                 title: audioTitle(audio, index),
                 run: function () {
                   playback.voice = voiceIdentity(audio);
+                  playback.selectedAudio = audio;
                   prepareProxy(
                     item,
                     video,
@@ -2297,6 +2302,12 @@
             String(item.title || '') + (video.title ? ' · ' + video.title : ''),
           url: url
         };
+        work._kinolampAudios =
+          playback.mode === 'proxy'
+            ? playback.selectedAudio
+              ? [playback.selectedAudio]
+              : []
+            : playback.audios;
         work._kinolampDiagnostic = {
           requested: Date.now(),
           mode: playback.mode,
@@ -3234,6 +3245,107 @@
       });
     }
 
+    function language(value) {
+      var code = String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z].*$/, '');
+      var aliases = {
+        ru: 'rus',
+        en: 'eng',
+        uk: 'ukr',
+        ja: 'jpn',
+        de: 'deu',
+        ger: 'deu',
+        fr: 'fra',
+        fre: 'fra',
+        es: 'spa',
+        it: 'ita',
+        ko: 'kor',
+        zh: 'zho',
+        chi: 'zho'
+      };
+      return code === 'und' ? '' : aliases[code] || code;
+    }
+
+    // Translate names only. The original native track objects and their enabled
+    // setters remain owned by Lampa, including Tizen AVPlay and WebOS audio handles.
+    function installAudioLabels(Lampa) {
+      if (
+        !Lampa.Player.listener ||
+        !Lampa.PlayerVideo ||
+        !Lampa.PlayerVideo.listener ||
+        !Lampa.PlayerPanel ||
+        typeof Lampa.PlayerPanel.setTranslate !== 'function'
+      ) {
+        return;
+      }
+      var current = null;
+      Lampa.Player.listener.follow('start', function (work) {
+        current = work && Array.isArray(work._kinolampAudios) ? work : null;
+      });
+      Lampa.Player.listener.follow('destroy', function () {
+        current = null;
+      });
+      function update(event) {
+        if (
+          !current ||
+          !event ||
+          !Array.isArray(event.tracks) ||
+          !event.tracks.length
+        ) {
+          return;
+        }
+        var tracks = event.tracks;
+        var audios = current._kinolampAudios.slice();
+        if (
+          audios.every(function (audio) {
+            return Number(audio.index) > 0;
+          })
+        ) {
+          audios.sort(function (a, b) {
+            return Number(a.index) - Number(b.index);
+          });
+        }
+        var labels = tracks.map(function (track, position) {
+          var lang = language(track.language || track.lang);
+          var audio = audios.length === tracks.length ? audios[position] : null;
+          if (
+            audio &&
+            lang &&
+            language(audio.lang) &&
+            language(audio.lang) !== lang
+          ) {
+            audio = null;
+          }
+          if (!audio && lang) {
+            var matches = audios.filter(function (candidate) {
+              return language(candidate.lang) === lang;
+            });
+            var nativeMatches = tracks.filter(function (candidate) {
+              return language(candidate.language || candidate.lang) === lang;
+            });
+            if (matches.length === 1 && nativeMatches.length === 1) {
+              audio = matches[0];
+            }
+          }
+          // A mismatch is not proof that every API voice exists in this stream.
+          // Null keeps Lampa's own label instead of inventing a selectable track.
+          return audio
+            ? {
+                name: escapeText(audioTitle(audio, position)),
+                extra: track.extra
+              }
+            : null;
+        });
+        var translate = current.translate || {};
+        translate.tracks = labels;
+        current.translate = translate;
+        Lampa.PlayerPanel.setTranslate(translate);
+      }
+      Lampa.PlayerVideo.listener.follow('tracks', update);
+      Lampa.PlayerVideo.listener.follow('webos_tracks', update);
+    }
+
     function nameExtension(Lampa, root) {
       var script = root.document && root.document.currentScript;
       if (
@@ -3270,6 +3382,7 @@
       }
       nameExtension(Lampa, root);
       installPlayerFeedback(Lampa);
+      installAudioLabels(Lampa);
       var ui = createUi(Lampa);
       var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
       var transport = createTransport(Lampa, diagnostics);

@@ -123,6 +123,7 @@ function harness(options = {}) {
   }
   if (options.api !== undefined) h.Lampa.Api = options.api;
   if (options.tmdb !== undefined) h.Lampa.TMDB = options.tmdb;
+  if (options.playerPanel !== undefined) h.Lampa.PlayerPanel = options.playerPanel;
   if (options.playerInfo !== undefined) h.Lampa.PlayerInfo = options.playerInfo;
   if (options.noPlayerVideo) delete h.Lampa.PlayerVideo;
   if (options.noVideoListener) delete h.Lampa.PlayerVideo.listener;

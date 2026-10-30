@@ -85,3 +85,21 @@ The optional lookup has a 2.5-second deadline and ignores late callbacks. An
 unavailable API, ambiguous result, missing poster or unsupported Lampa build
 falls back to an HTTPS frame from the same season, then the series image.
 Portrait season covers and landscape episode thumbnails retain separate layouts.
+
+## KinoPub audio labels
+
+KinoPub audio metadata is attached to the current playback work, not Activity
+history. When Lampa emits native `tracks` or `webos_tracks`, Kinolamp supplies
+`PlayerPanel.setTranslate({tracks: ...})` labels using KinoPub language,
+translation type, studio and codec. It never replaces the native track objects
+or their `enabled` setters and does not synthesize `voiceovers` from metadata.
+
+When counts agree, API track indices establish order and known languages must
+agree. Otherwise only a unique language on both sides is labeled; ambiguous
+tracks retain native labels. The proxy work carries only its selected voice.
+An empty episode audio list can be filled from media-links metadata. Labels are
+HTML-escaped, updated for each playback lifecycle, and leave subtitle labels
+intact. Builds without the native translate API retain native behavior.
+
+This labels the tracks actually exposed by the selected HLS stream/player.
+It cannot add a voice that the stream omits or the device cannot decode.

@@ -289,7 +289,10 @@ export function createPlayback(Lampa, dependencies) {
         });
         recordSource(stream.url);
         playback.height = stream.height || maxHeight;
-        var audios = video.audios || data.audios || [];
+        var audios =
+          Array.isArray(video.audios) && video.audios.length
+            ? video.audios
+            : data.audios || [];
         playback.audios = audios;
         if (transition) {
           var matching = transition.voice
@@ -303,6 +306,7 @@ export function createPlayback(Lampa, dependencies) {
             );
           }
           var selected = matching[0] || audios[0];
+          playback.selectedAudio = selected;
           playback.voice = selected ? voiceIdentity(selected) : '';
           if (proxy) {
             prepareProxy(
@@ -329,6 +333,7 @@ export function createPlayback(Lampa, dependencies) {
             title: audioTitle(audio, index),
             run: function () {
               playback.voice = voiceIdentity(audio);
+              playback.selectedAudio = audio;
               prepareProxy(
                 item,
                 video,
@@ -518,6 +523,12 @@ export function createPlayback(Lampa, dependencies) {
         String(item.title || '') + (video.title ? ' · ' + video.title : ''),
       url: url
     };
+    work._kinolampAudios =
+      playback.mode === 'proxy'
+        ? playback.selectedAudio
+          ? [playback.selectedAudio]
+          : []
+        : playback.audios;
     work._kinolampDiagnostic = {
       requested: Date.now(),
       mode: playback.mode,

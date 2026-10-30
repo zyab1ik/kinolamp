@@ -12,6 +12,7 @@ import { createCatalog } from './catalog.js';
 import { installSettings } from './settings.js';
 import { installWatch } from './watch.js';
 import { installPlayerFeedback } from './player-feedback.js';
+import { installAudioLabels } from './audio-labels.js';
 import icon from '../static/icon.svg';
 function nameExtension(Lampa, root) {
   var script = root.document && root.document.currentScript;
@@ -45,6 +46,7 @@ export function install(Lampa, $, root) {
   }
   nameExtension(Lampa, root);
   installPlayerFeedback(Lampa);
+  installAudioLabels(Lampa);
   var ui = createUi(Lampa);
   var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
   var transport = createTransport(Lampa, diagnostics);
