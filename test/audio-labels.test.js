@@ -22,8 +22,8 @@ test('KinoPub voices label only real native tracks and preserve Tizen-style enab
   tracks.forEach((track, i) => Object.defineProperty(track, 'enabled', { set(value) { switched.push([i, value]); } }));
   const setter = Object.getOwnPropertyDescriptor(tracks[1], 'enabled').set;
   h.videoEvents.emit('tracks', { tracks });
-  assert.match(shown.at(-1).tracks[0].name, /rus · Дубляж · Студия &lt;тест&gt; · ac3/);
-  assert.match(shown.at(-1).tracks[1].name, /eng · Оригинал · aac/);
+  assert.equal(shown.at(-1).tracks[0].name, 'Дубляж · Студия &lt;тест&gt; · AC3 (Русский)');
+  assert.equal(shown.at(-1).tracks[1].name, 'Оригинал (Английский)');
   assert.equal(shown.at(-1).tracks[0].extra, tracks[0].extra);
   assert.equal(Object.getOwnPropertyDescriptor(tracks[1], 'enabled').set, setter);
   tracks[1].enabled = true; assert.deepEqual(switched, [[1, true]]);

@@ -36,15 +36,52 @@ function streams(files, proxy, maxHeight, multipleAudios) {
   return limited.length ? limited : result.slice(-1);
 }
 function audioTitle(audio, index) {
-  return (
+  var type = audio.type && (audio.type.title || audio.type.short_title);
+  var types = {
+    DUB: 'Дубляж',
+    MVO: 'Многоголосый',
+    DVO: 'Двухголосый',
+    AVO: 'Авторский',
+    VO: 'Одноголосый',
+    ORIG: 'Оригинал'
+  };
+  var languages = {
+    ru: 'Русский',
+    rus: 'Русский',
+    en: 'Английский',
+    eng: 'Английский',
+    uk: 'Украинский',
+    ukr: 'Украинский',
+    ja: 'Японский',
+    jpn: 'Японский',
+    de: 'Немецкий',
+    deu: 'Немецкий',
+    ger: 'Немецкий',
+    fr: 'Французский',
+    fra: 'Французский',
+    fre: 'Французский',
+    es: 'Испанский',
+    spa: 'Испанский',
+    it: 'Итальянский',
+    ita: 'Итальянский',
+    ko: 'Корейский',
+    kor: 'Корейский',
+    zh: 'Китайский',
+    zho: 'Китайский',
+    chi: 'Китайский'
+  };
+  var lang = String(audio.lang || '').toLowerCase();
+  var codec = String(audio.codec || '').toUpperCase();
+  var label =
     [
-      audio.lang,
-      audio.type && (audio.type.short_title || audio.type.title),
+      types[String(type).toUpperCase()] || type,
       audio.author && audio.author.title,
-      audio.codec
+      codec === 'AAC' ? '' : codec
     ]
       .filter(Boolean)
-      .join(' · ') || 'Дорожка ' + (index + 1)
+      .join(' · ') || 'Дорожка ' + (index + 1);
+  return (
+    label + (lang ? ' (' + (languages[lang] || lang.toUpperCase()) + ')' : '')
   );
 }
 function voiceIdentity(audio) {

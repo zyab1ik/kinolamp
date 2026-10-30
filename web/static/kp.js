@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.10 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.3.11 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.10';
+    var VERSION = '0.3.11';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -1438,15 +1438,53 @@
       return limited.length ? limited : result.slice(-1);
     }
     function audioTitle(audio, index) {
-      return (
+      var type = audio.type && (audio.type.title || audio.type.short_title);
+      var types = {
+        DUB: 'Дубляж',
+        MVO: 'Многоголосый',
+        DVO: 'Двухголосый',
+        AVO: 'Авторский',
+        VO: 'Одноголосый',
+        ORIG: 'Оригинал'
+      };
+      var languages = {
+        ru: 'Русский',
+        rus: 'Русский',
+        en: 'Английский',
+        eng: 'Английский',
+        uk: 'Украинский',
+        ukr: 'Украинский',
+        ja: 'Японский',
+        jpn: 'Японский',
+        de: 'Немецкий',
+        deu: 'Немецкий',
+        ger: 'Немецкий',
+        fr: 'Французский',
+        fra: 'Французский',
+        fre: 'Французский',
+        es: 'Испанский',
+        spa: 'Испанский',
+        it: 'Итальянский',
+        ita: 'Итальянский',
+        ko: 'Корейский',
+        kor: 'Корейский',
+        zh: 'Китайский',
+        zho: 'Китайский',
+        chi: 'Китайский'
+      };
+      var lang = String(audio.lang || '').toLowerCase();
+      var codec = String(audio.codec || '').toUpperCase();
+      var label =
         [
-          audio.lang,
-          audio.type && (audio.type.short_title || audio.type.title),
+          types[String(type).toUpperCase()] || type,
           audio.author && audio.author.title,
-          audio.codec
+          codec === 'AAC' ? '' : codec
         ]
           .filter(Boolean)
-          .join(' · ') || 'Дорожка ' + (index + 1)
+          .join(' · ') || 'Дорожка ' + (index + 1);
+      return (
+        label +
+        (lang ? ' (' + (languages[lang] || lang.toUpperCase()) + ')' : '')
       );
     }
     function voiceIdentity(audio) {

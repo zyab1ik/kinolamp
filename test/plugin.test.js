@@ -24,7 +24,7 @@ test('helpers preserve text, reject unsafe URLs and select HTTPS streams', () =>
   assert.equal(plugin.streams([{ h: 480, urls: { http: 'https://cdn.example/a' } }], false, 1080)[0].height, 480);
   assert.equal(plugin.streams([{ url: { hls: 'https://cdn.example/a' } }], false, 1080)[0].height, 0);
   assert.equal(plugin.audioTitle({}, 1), 'Дорожка 2');
-  assert.equal(plugin.audioTitle({ type: { title: 'Dub' } }, 0), 'Dub');
+  assert.equal(plugin.audioTitle({ type: { title: 'Dub' } }, 0), 'Дубляж');
 });
 
 test('OAuth goes only to KinoPub and stores tokens without logging', () => {
