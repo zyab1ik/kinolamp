@@ -1064,7 +1064,7 @@
     }
 
     var PAGE_STYLES =
-      ".kp-page {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 1.5em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.7em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 1em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n  font-size: 0.95em;\n  line-height: 1.35;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='seasons'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n";
+      ".kp-page {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 1.5em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.7em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 1em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n  font-size: 0.95em;\n  line-height: 1.35;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n";
 
     function createNativePages(Lampa, $, navigation, load, activate) {
       if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) {
@@ -1300,6 +1300,97 @@
           if (active) {
             active.start();
           }
+        }
+      };
+    }
+
+    // Resolve artwork by identity, never by an ambiguous translated title.
+    // Reuse Lampa's TMDB client/proxy/cache; KinoPub tokens never enter these calls.
+    function createSeasonPosters(Lampa) {
+      return function load(item, done) {
+        var imdb = String(item.imdb || '').replace(/^tt/, '');
+        var source = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
+        if (
+          !/^[0-9]{1,10}$/.test(imdb) ||
+          Number(imdb) === 0 ||
+          !source ||
+          typeof source.get !== 'function' ||
+          !Lampa.TMDB ||
+          typeof Lampa.TMDB.image !== 'function'
+        ) {
+          done([]);
+          return;
+        }
+        while (imdb.length < 7) {
+          imdb = '0' + imdb;
+        }
+        var settled = false;
+        // Artwork is optional. A slow metadata service must not block season choice.
+        var timer = setTimeout(finish, 2500);
+        function finish(seasons) {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timer);
+          done(seasons || []);
+        }
+        function failed() {
+          finish([]);
+        }
+        try {
+          source.get(
+            'find/tt' + imdb + '?external_source=imdb_id',
+            {},
+            function (found) {
+              if (settled) {
+                return;
+              }
+              var matches = found && found.tv_results;
+              if (
+                !Array.isArray(matches) ||
+                matches.length !== 1 ||
+                !matches[0] ||
+                !/^[1-9][0-9]*$/.test(String(matches[0].id))
+              ) {
+                failed();
+                return;
+              }
+              source.get(
+                'tv/' + matches[0].id,
+                {},
+                function (show) {
+                  var seasons = show && show.seasons;
+                  finish(
+                    Array.isArray(seasons)
+                      ? seasons.map(function (season) {
+                          return {
+                            number: season.season_number,
+                            // Only image paths are passed to Lampa's image/proxy helper.
+                            poster:
+                              typeof season.poster_path === 'string' &&
+                              /^\/[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/.test(
+                                season.poster_path
+                              )
+                                ? Lampa.TMDB.image(
+                                    't/p/w500' + season.poster_path
+                                  )
+                                : ''
+                          };
+                        })
+                      : []
+                  );
+                },
+                failed,
+                { life: 60 * 24 * 7 }
+              );
+            },
+            failed,
+            { life: 60 * 24 * 7 }
+          );
+        } catch (_) {
+          // Older/custom Lampa builds may expose an incompatible metadata adapter.
+          failed();
         }
       };
     }
@@ -1699,6 +1790,7 @@
       var authorized = authorization.authorized;
       var playlist = createEpisodePlaylist(Lampa, client, openVideo, notify);
       var tracker = createProgressTracker(Lampa, progress);
+      var loadSeasonPosters = createSeasonPosters(Lampa);
 
       // Resolve a unique card match before asking the viewer to choose a result.
       function search(movie) {
@@ -2309,27 +2401,43 @@
               item.seasons &&
               item.seasons.length
             ) {
-              done(null, {
-                title: item.title,
-                description: item.plot,
-                details: details(item),
-                layout: 'seasons',
-                hint: 'Сезоны · ' + item.seasons.length,
-                rows: item.seasons.map(function (season, index) {
-                  return {
-                    title:
-                      'Сезон ' +
-                      (season.number === undefined ? index + 1 : season.number),
-                    subtitle: [
-                      season.title,
-                      'Серий: ' + (season.episodes || []).length
-                    ]
-                      .filter(Boolean)
-                      .join(' · '),
-                    poster: image,
-                    next: { view: 'season', id: item.id, season: index }
-                  };
-                })
+              loadSeasonPosters(item, function (covers) {
+                done(null, {
+                  title: item.title,
+                  description: item.plot,
+                  details: details(item),
+                  layout: 'seasons',
+                  hint: 'Сезоны · ' + item.seasons.length,
+                  rows: item.seasons.map(function (season, index) {
+                    var number =
+                      season.number === undefined ? index + 1 : season.number;
+                    var cover = covers.filter(function (candidate) {
+                      return Number(candidate.number) === Number(number);
+                    })[0];
+                    var own = poster(season);
+                    var tmdb = cover && imageURL(cover.poster);
+                    var frames = (season.episodes || [])
+                      .map(function (episode) {
+                        return imageURL(episode.thumbnail);
+                      })
+                      .filter(httpsURL);
+                    return {
+                      title: 'Сезон ' + number,
+                      subtitle: [
+                        season.title,
+                        'Серий: ' + (season.episodes || []).length
+                      ]
+                        .filter(Boolean)
+                        .join(' · '),
+                      poster: httpsURL(own)
+                        ? own
+                        : httpsURL(tmdb)
+                          ? tmdb
+                          : frames[0] || image,
+                      next: { view: 'season', id: item.id, season: index }
+                    };
+                  })
+                });
               });
               return;
             }

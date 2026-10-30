@@ -109,9 +109,6 @@
 .kp-page__grid[data-layout='seasons'] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.kp-page__grid[data-layout='seasons'] .kp-page__poster {
-  padding-bottom: 56.25%;
-}
 .kp-page__grid[data-layout='episodes'] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

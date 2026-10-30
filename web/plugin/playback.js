@@ -1,3 +1,4 @@
+import { createSeasonPosters } from './season-posters.js';
 import { createEpisodePlaylist } from './episode-playlist.js';
 import { createProgressTracker } from './progress-tracker.js';
 import { httpsURL } from './text.js';
@@ -25,6 +26,7 @@ export function createPlayback(Lampa, dependencies) {
   var authorized = authorization.authorized;
   var playlist = createEpisodePlaylist(Lampa, client, openVideo, notify);
   var tracker = createProgressTracker(Lampa, progress);
+  var loadSeasonPosters = createSeasonPosters(Lampa);
 
   // Resolve a unique card match before asking the viewer to choose a result.
   function search(movie) {
@@ -611,27 +613,43 @@ export function createPlayback(Lampa, dependencies) {
         var item = json.item;
         var image = poster(item);
         if (route.kp_view === 'item' && item.seasons && item.seasons.length) {
-          done(null, {
-            title: item.title,
-            description: item.plot,
-            details: details(item),
-            layout: 'seasons',
-            hint: 'Сезоны · ' + item.seasons.length,
-            rows: item.seasons.map(function (season, index) {
-              return {
-                title:
-                  'Сезон ' +
-                  (season.number === undefined ? index + 1 : season.number),
-                subtitle: [
-                  season.title,
-                  'Серий: ' + (season.episodes || []).length
-                ]
-                  .filter(Boolean)
-                  .join(' · '),
-                poster: image,
-                next: { view: 'season', id: item.id, season: index }
-              };
-            })
+          loadSeasonPosters(item, function (covers) {
+            done(null, {
+              title: item.title,
+              description: item.plot,
+              details: details(item),
+              layout: 'seasons',
+              hint: 'Сезоны · ' + item.seasons.length,
+              rows: item.seasons.map(function (season, index) {
+                var number =
+                  season.number === undefined ? index + 1 : season.number;
+                var cover = covers.filter(function (candidate) {
+                  return Number(candidate.number) === Number(number);
+                })[0];
+                var own = poster(season);
+                var tmdb = cover && imageURL(cover.poster);
+                var frames = (season.episodes || [])
+                  .map(function (episode) {
+                    return imageURL(episode.thumbnail);
+                  })
+                  .filter(httpsURL);
+                return {
+                  title: 'Сезон ' + number,
+                  subtitle: [
+                    season.title,
+                    'Серий: ' + (season.episodes || []).length
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                  poster: httpsURL(own)
+                    ? own
+                    : httpsURL(tmdb)
+                      ? tmdb
+                      : frames[0] || image,
+                  next: { view: 'season', id: item.id, season: index }
+                };
+              })
+            });
           });
           return;
         }

@@ -72,3 +72,16 @@ Activity history contains only serializable query/item/season routes. DOM nodes,
 On full-card completion the plugin adds a handler through Lampa's Start component API. It runs after the normal button grouping, replacing only the native Watch button's activation and long-press actions; Lampa retains its focus handler. Watch resolves a unique title/year/type match or an IMDb ID. A single-video film starts immediately with the saved position and highest stream within the quality limit. Multiple or missing matches retain the native results page. Series open seasons and episodes. Long press uses Lampa.Select for the available source actions. Builds without the Start extension API retain the source-list integration.
 
 Direct playback passes available qualities to Lampa.Player's `quality` map. No second Back button is rendered inside Kinolamp pages. Settings use SettingsApi and a nested native Settings component; proxy credentials are hidden and removed from focus navigation until proxy mode is enabled. They are preserved in local storage when hidden. Progress reset stays behind confirmation in Advanced.
+
+## Season artwork
+
+Season cards prefer a season-specific KinoPub poster. Otherwise Kinolamp uses
+Lampa's existing TMDB API/proxy/cache to resolve the item's IMDb ID and load
+TV details. Posters are matched by season number, including specials (season 0),
+not by array position or a title search. Only public metadata IDs are sent to
+TMDB; KinoPub authorization is never passed to that client.
+
+The optional lookup has a 2.5-second deadline and ignores late callbacks. An
+unavailable API, ambiguous result, missing poster or unsupported Lampa build
+falls back to an HTTPS frame from the same season, then the series image.
+Portrait season covers and landscape episode thumbnails retain separate layouts.
