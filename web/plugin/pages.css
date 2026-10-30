@@ -8,7 +8,6 @@
 .kp-page__head {
   display: flex;
   align-items: center;
-  gap: 1em;
   margin-bottom: 0.7em;
 }
 .kp-page__title {
@@ -27,11 +26,14 @@
 .kp-page__grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1.5em;
+  /* Older TV engines understand grid-gap but ignore the newer gap alias. */
+  grid-gap: 2em 1.5em;
+  align-items: start;
   padding: 0.4em;
 }
 .kp-page__card {
   min-width: 0;
+  box-sizing: border-box;
 }
 .kp-page__poster {
   height: 0;
@@ -51,7 +53,10 @@
 }
 .kp-page__placeholder {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,6 +68,7 @@
 }
 .kp-page__name {
   margin-top: 0.85em;
+  word-wrap: break-word;
   font-size: 0.95em;
   line-height: 1.35;
 }
@@ -136,10 +142,11 @@
 .kp-page__toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6em;
-  margin: 0.2em 0 1.2em;
+  margin: 0.2em 0 0.6em;
 }
 .kp-page__action {
+  /* Margins also work on TV browsers without flex gap support. */
+  margin: 0 0.6em 0.6em 0;
   font-size: 1em;
   padding: 0.6em 1em;
   border-radius: 0.35em;

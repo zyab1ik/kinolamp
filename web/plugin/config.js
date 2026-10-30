@@ -1,4 +1,4 @@
-export var VERSION = '0.3.6';
+export var VERSION = '0.3.7';
 export var API = 'https://api.service-kp.com';
 export var PREFIX = 'kp_self_';
 // Shared xbmc client distributed by open-source KinoPub clients; not an account token.

@@ -121,6 +121,9 @@ function harness(options = {}) {
       backward() { const page = h.pages.pop(); page.destroy(); h.pages.at(-1)?.start(); }
     };
   }
+  if (options.playerInfo !== undefined) h.Lampa.PlayerInfo = options.playerInfo;
+  if (options.noPlayerVideo) delete h.Lampa.PlayerVideo;
+  if (options.noVideoListener) delete h.Lampa.PlayerVideo.listener;
   plugin.install(h.Lampa, h.$, { appready: true, ...(options.native ? { Navigator: h.navigation } : {}), ...options.root });
   h.descendants = function descendants(node) { return [node, ...node.children.flatMap(child => descendants(child))]; };
   h.pageCards = () => h.descendants(h.pages.at(-1).render()).filter(node => String(node.input).includes('kp-page__card selector'));
