@@ -266,7 +266,16 @@ export function createPlayback(Lampa, dependencies) {
       var maxHeight = transition
         ? transition.height
         : Number(client.get('quality')) || 1080;
-      var availableStreams = streams(data.files, proxy, maxHeight);
+      var audios =
+        Array.isArray(video.audios) && video.audios.length
+          ? video.audios
+          : data.audios || [];
+      var availableStreams = streams(
+        data.files,
+        proxy,
+        maxHeight,
+        audios.length > 1
+      );
       if (!availableStreams.length) {
         unavailable(
           proxy
@@ -289,10 +298,6 @@ export function createPlayback(Lampa, dependencies) {
         });
         recordSource(stream.url);
         playback.height = stream.height || maxHeight;
-        var audios =
-          Array.isArray(video.audios) && video.audios.length
-            ? video.audios
-            : data.audios || [];
         playback.audios = audios;
         if (transition) {
           var matching = transition.voice

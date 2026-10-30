@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.9 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.3.10 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.9';
+    var VERSION = '0.3.10';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -1403,11 +1403,20 @@
         ) || 0
       );
     }
-    function streams(files, proxy, maxHeight) {
+    function streams(files, proxy, maxHeight, multipleAudios) {
       var result = [];
+      // HLS2 may expose only the default voice. Keep every quality on HLS4 when
+      // KinoPub advertises multiple voices, so Lampa can discover native tracks.
+      var useHLS4 =
+        proxy ||
+        (multipleAudios &&
+          (files || []).some(function (file) {
+            var urls = file.urls || file.url || {};
+            return httpsURL(urls.hls4);
+          }));
       (files || []).forEach(function (file) {
         var urls = file.urls || file.url || {};
-        var formats = proxy ? ['hls4'] : ['hls2', 'hls', 'hls4', 'http'];
+        var formats = useHLS4 ? ['hls4'] : ['hls2', 'hls', 'hls4', 'http'];
         for (var i = 0; i < formats.length; i++) {
           var url = urls[formats[i]];
           if (httpsURL(url)) {
@@ -2036,7 +2045,16 @@
           var maxHeight = transition
             ? transition.height
             : Number(client.get('quality')) || 1080;
-          var availableStreams = streams(data.files, proxy, maxHeight);
+          var audios =
+            Array.isArray(video.audios) && video.audios.length
+              ? video.audios
+              : data.audios || [];
+          var availableStreams = streams(
+            data.files,
+            proxy,
+            maxHeight,
+            audios.length > 1
+          );
           if (!availableStreams.length) {
             unavailable(
               proxy
@@ -2061,10 +2079,6 @@
             });
             recordSource(stream.url);
             playback.height = stream.height || maxHeight;
-            var audios =
-              Array.isArray(video.audios) && video.audios.length
-                ? video.audios
-                : data.audios || [];
             playback.audios = audios;
             if (transition) {
               var matching = transition.voice

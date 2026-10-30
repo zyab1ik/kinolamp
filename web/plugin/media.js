@@ -5,11 +5,20 @@ function qualityOf(file) {
     0
   );
 }
-function streams(files, proxy, maxHeight) {
+function streams(files, proxy, maxHeight, multipleAudios) {
   var result = [];
+  // HLS2 may expose only the default voice. Keep every quality on HLS4 when
+  // KinoPub advertises multiple voices, so Lampa can discover native tracks.
+  var useHLS4 =
+    proxy ||
+    (multipleAudios &&
+      (files || []).some(function (file) {
+        var urls = file.urls || file.url || {};
+        return httpsURL(urls.hls4);
+      }));
   (files || []).forEach(function (file) {
     var urls = file.urls || file.url || {};
-    var formats = proxy ? ['hls4'] : ['hls2', 'hls', 'hls4', 'http'];
+    var formats = useHLS4 ? ['hls4'] : ['hls2', 'hls', 'hls4', 'http'];
     for (var i = 0; i < formats.length; i++) {
       var url = urls[formats[i]];
       if (httpsURL(url)) {

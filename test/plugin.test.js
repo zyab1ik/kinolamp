@@ -361,7 +361,7 @@ test('device metadata updates the existing session on startup and after login wi
     const info = new URLSearchParams(req.body);
     assert.equal(info.get('title'), 'Kinolamp / Lampa');
     assert.equal(info.get('hardware'), options.platform || 'Lampa');
-    assert.equal(info.get('software'), 'Kinolamp 0.3.9');
+    assert.equal(info.get('software'), 'Kinolamp ' + fs.readFileSync(path.resolve(__dirname, '../VERSION'), 'utf8').trim());
     assert.equal(info.size, 3);
     assert.equal(h.requests.length, 0);
     assert.equal(h.storage.get('kp_self_access'), 'test-access');
