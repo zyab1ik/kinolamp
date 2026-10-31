@@ -1,18 +1,28 @@
+import type {
+  Params,
+  PluginError,
+  Reply,
+  ApiResponse,
+  Transport,
+  Store,
+  Settings
+} from './contracts.js';
+
 import { API, PREFIX, CLIENT_ID, CLIENT_SECRET } from './config.js';
 import { encodeForm } from './text.js';
 // Transport is injected to test OAuth without credentials or real network calls.
-export function createClient(storage, transport) {
+export function createClient(storage: Store, transport: Transport) {
   var refreshing = false;
-  var waiting = [];
+  var waiting: ((error?: PluginError | null) => void)[] = [];
   // Logout invalidates pending requests and token refreshes.
   var generation = 0;
-  function get(key) {
-    return storage.get(PREFIX + key, '') || '';
+  function get<K extends keyof Settings>(key: K): Settings[K] {
+    return storage.get<Settings[K] | ''>(PREFIX + key, '') || '';
   }
-  function set(key, value) {
+  function set(key: string, value: unknown) {
     storage.set(PREFIX + key, value);
   }
-  function save(json, expected) {
+  function save(json: ApiResponse | undefined, expected: number) {
     if (
       expected !== generation ||
       !json ||
@@ -32,7 +42,7 @@ export function createClient(storage, transport) {
     set('access', '');
     set('refresh', '');
   }
-  function oauth(path, grant, done) {
+  function oauth(path: string, grant: Params, done: Reply<ApiResponse>) {
     grant.client_id = CLIENT_ID;
     grant.client_secret = CLIENT_SECRET;
     transport(
@@ -43,7 +53,7 @@ export function createClient(storage, transport) {
       done
     );
   }
-  function refresh(done) {
+  function refresh(done: (error?: PluginError | null) => void) {
     if (!get('refresh')) {
       done({ code: 'login_required' });
       return;
@@ -77,14 +87,22 @@ export function createClient(storage, transport) {
       }
     );
   }
-  function api(path, params, done, retried, post) {
+  function api(
+    path: string,
+    params: Params | null,
+    done: Reply<ApiResponse>,
+    retried?: boolean,
+    post?: boolean
+  ) {
     if (!get('access')) {
       done({ code: 'login_required' });
       return;
     }
     var expected = generation;
     var query = encodeForm(params || {});
-    var headers = { Authorization: 'Bearer ' + get('access') };
+    var headers: Record<string, string> = {
+      Authorization: 'Bearer ' + get('access')
+    };
     if (post) {
       headers['Content-Type'] = 'application/x-www-form-urlencoded';
     }
@@ -125,7 +143,7 @@ export function createClient(storage, transport) {
       return generation;
     },
     saveTokens: save,
-    notifyDevice: function (info, done) {
+    notifyDevice: function (info: Params, done: Reply<ApiResponse>) {
       api('/device/notify', info, done, false, true);
     }
   };

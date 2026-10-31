@@ -1,9 +1,20 @@
+import type { Action, Client, Ui, JQuery, Lampa } from './contracts.js';
+interface LoginState {
+  cancelled: boolean;
+  timer: number | null;
+  generation: number;
+}
 import { VERSION } from './config.js';
-export function createAuthorization(Lampa, $, client, ui) {
+export function createAuthorization(
+  Lampa: Lampa,
+  $: JQuery,
+  client: Client,
+  ui: Ui
+) {
   var notify = ui.notify;
   var restore = ui.restore;
   var errorMessage = ui.errorMessage;
-  var pendingLogin = null;
+  var pendingLogin: LoginState | null = null;
   function updateDevice() {
     if (!client.hasToken()) {
       return;
@@ -26,15 +37,15 @@ export function createAuthorization(Lampa, $, client, ui) {
     if (!pendingLogin) {
       return;
     }
-    clearTimeout(pendingLogin.timer);
+    clearTimeout(pendingLogin.timer!);
     pendingLogin.cancelled = true;
     pendingLogin = null;
   }
-  function login(done) {
+  function login(done?: Action) {
     if (pendingLogin) {
       return;
     }
-    var state = {
+    var state: LoginState = {
       cancelled: false,
       timer: null,
       generation: client.generation()
@@ -47,28 +58,28 @@ export function createAuthorization(Lampa, $, client, ui) {
         if (state.cancelled) {
           return;
         }
-        if (error || !json.code || !json.user_code) {
+        if (error || !json!.code || !json!.user_code) {
           stopLogin();
           notify(errorMessage(error));
           return;
         }
-        var pollInterval = Math.max(Number(json.interval) || 5, 5) * 1000;
+        var pollInterval = Math.max(Number(json!.interval) || 5, 5) * 1000;
         var expiresAt =
-          Date.now() + Math.min(Number(json.expires_in) || 600, 3600) * 1000;
+          Date.now() + Math.min(Number(json!.expires_in) || 600, 3600) * 1000;
         var previous = (Lampa.Controller.enabled() || {}).name;
         var content = $('<div></div>');
         var verification =
           /^https:\/\/(?:kino\.pub|kino\.watch)\/device\/?$/.test(
-            json.verification_uri
+            json!.verification_uri!
           )
-            ? json.verification_uri
+            ? json!.verification_uri!
             : 'https://kino.pub/device';
         content.append(
           $('<p></p>').text(
             '1. Открой на телефоне или в другой вкладке: ' + verification
           )
         );
-        content.append($('<h1></h1>').text(String(json.user_code)));
+        content.append($('<h1></h1>').text(String(json!.user_code)));
         content.append(
           $('<p></p>').text(
             '2. Войди в аккаунт KinoPub, введи этот код в поле «Код устройства» и нажми «Добавить».'
@@ -111,7 +122,7 @@ export function createAuthorization(Lampa, $, client, ui) {
           }
           client.oauth(
             '/oauth2/device',
-            { grant_type: 'device_token', code: json.code },
+            { grant_type: 'device_token', code: json!.code },
             function (error, token) {
               if (state.cancelled) {
                 return;
@@ -145,7 +156,7 @@ export function createAuthorization(Lampa, $, client, ui) {
       }
     );
   }
-  function authorized(run) {
+  function authorized(run: Action) {
     if (client.hasToken()) {
       run();
     } else {

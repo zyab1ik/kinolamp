@@ -8,7 +8,7 @@ ACTIONLINT_VERSION := v1.7.12
 GO_PACKAGES = $(shell go list ./... | sed '\|/node_modules/|d')
 REVISION ?= $(shell git rev-parse HEAD)
 COMPOSE := docker compose --project-name kinolamp --env-file .env -f deployments/compose.yaml
-.PHONY: build-plugin check-plugin fmt-plugin help check check-ci check-version dist release release-check test-release fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
+.PHONY: build-plugin check-plugin fmt-plugin typecheck help check check-ci check-version dist release release-check test-release fmt test test-go test-js test-deploy coverage coverage-go coverage-js build run docker-build up down logs health clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -29,13 +29,16 @@ check-version: ## Check the release and plugin versions agree
 fmt: fmt-plugin ## Format Go and plugin source files
 	gofmt -w cmd internal web
 
+typecheck: node_modules/.package-lock.json ## Check strict TypeScript contracts without emitting runtime files
+	npm run typecheck
+
 node_modules/.package-lock.json: package.json package-lock.json
 	npm ci --ignore-scripts --no-audit --no-fund
 
 build-plugin: node_modules/.package-lock.json ## Build the readable ES5 plugin from web/plugin sources
 	npm run build:plugin
 
-check-plugin: node_modules/.package-lock.json ## Lint sources, verify ES5 and check the committed bundle is up to date
+check-plugin: node_modules/.package-lock.json ## Check TypeScript, lint sources, verify ES5 and check the committed bundle is up to date
 	npm run check
 
 fmt-plugin: node_modules/.package-lock.json ## Format plugin sources and rebuild kp.js

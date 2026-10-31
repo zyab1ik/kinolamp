@@ -259,7 +259,8 @@ test('mounting guards, duplicate install guard and browser wrapper', () => {
 });
 
 test('extension metadata names only its own unnamed entry and preserves custom names', () => {
-  const url = 'https://kinolamp.example/kp.js'; const root = { document: { currentScript: { src: url + '?reset=1' } } };
+  for (const suffix of ['/kp', '/kp.js']) {
+  const url = 'https://kinolamp.example' + suffix; const root = { document: { currentScript: { src: url + '?reset=1' } } };
   const entries = [{ url }, { url: 'https://other.example/kp.js' }, { url, name: 'My custom name' }, {}]; let saves = 0;
   const Lampa = { Plugins: { get() { return entries; }, save() { saves++; } } };
   plugin.nameExtension(Lampa, root);
@@ -268,6 +269,7 @@ test('extension metadata names only its own unnamed entry and preserves custom n
   plugin.nameExtension(Lampa, root); assert.equal(saves, 1);
   for (const current of [{}, { document: {} }, { document: { currentScript: {} } }]) plugin.nameExtension(Lampa, current);
   for (const api of [{}, { Plugins: {} }, { Plugins: { get() { return []; } } }]) plugin.nameExtension(api, root);
+  }
 });
 
 

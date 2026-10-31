@@ -232,7 +232,7 @@ func TestHTTPPrivacyAndTickets(t *testing.T) {
 	a := newApp(c, upstream(200, testMaster))
 	now := time.Now()
 	a.now = func() time.Time { return now }
-	for _, path := range []string{"/", "/kp.js?version=1", "/health"} {
+	for _, path := range []string{"/", "/kp?version=1", "/kp.js?version=1", "/health"} {
 		w := call(a, "GET", path, "", "", "")
 		require(t, w.Code == 200 && w.Header().Get("Cache-Control") == "no-store", "static route failed")
 	}
@@ -266,7 +266,7 @@ func TestHTTPPrivacyAndTickets(t *testing.T) {
 
 func TestPublicPluginAssetsAllowBrowserChecksWithoutOpeningPrivateAPI(t *testing.T) {
 	a := newApp(testConfig(), upstream(200, testMaster))
-	for _, route := range []string{"/", "/kp.js?cache=true", "/icon.svg", "/style.css"} {
+	for _, route := range []string{"/", "/kp?cache=true", "/kp.js?cache=true", "/icon.svg", "/style.css"} {
 		for _, method := range []string{"GET", "HEAD"} {
 			w := call(a, method, route, "", "", "http://lampa.mx")
 			require(t, w.Code == 200 && w.Header().Get("Access-Control-Allow-Origin") == "*", "public plugin asset must support cross-origin checks")
@@ -283,6 +283,22 @@ func TestPublicPluginAssetsAllowBrowserChecksWithoutOpeningPrivateAPI(t *testing
 		require(t, w.Code == 403 && w.Header().Get("Access-Control-Allow-Origin") == "", "private API CORS must remain restricted")
 	}
 	require(t, call(a, "POST", "/kp.js", "", "", "").Code == 404, "public assets are read-only")
+	require(t, call(a, "POST", "/kp", "", "", "").Code == 404, "short plugin address is read-only")
+}
+
+func TestShortPluginAddressMatchesLegacyAsset(t *testing.T) {
+	// A plugin is executable content, not a redirect or an HTML download page.
+	// Both URLs must stay usable with the proxy disabled and without credentials.
+	a := newApp(config{}, nil)
+	legacy := call(a, "GET", "/kp.js", "", "", "https://cf.lampa.mx")
+	for _, route := range []string{"/kp", "/kp?v=0.3.14"} {
+		short := call(a, "GET", route, "", "", "https://cf.lampa.mx")
+		require(t, short.Code == 200, "short plugin address must serve directly")
+		require(t, short.Body.String() == legacy.Body.String(), "plugin aliases differ")
+		require(t, short.Header().Get("Content-Type") == "application/javascript; charset=utf-8", "plugin MIME type must be JavaScript")
+		require(t, short.Header().Get("Cache-Control") == "no-store", "plugin must not serve a stale version")
+		require(t, short.Header().Get("Access-Control-Allow-Origin") == "*", "Lampa must be able to check the short URL")
+	}
 }
 
 func TestHTTPFailuresAndLimits(t *testing.T) {

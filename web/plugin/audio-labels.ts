@@ -1,11 +1,13 @@
+import type { Work, PlayerEvent, Lampa } from './contracts.js';
+
 import { audioTitle } from './media.js';
 import { escapeText } from './text.js';
 
-function language(value) {
+function language(value: unknown) {
   var code = String(value || '')
     .toLowerCase()
     .replace(/[^a-z].*$/, '');
-  var aliases = {
+  var aliases: Record<string, string> = {
     ru: 'rus',
     en: 'eng',
     uk: 'ukr',
@@ -25,7 +27,7 @@ function language(value) {
 
 // Translate names only. The original native track objects and their enabled
 // setters remain owned by Lampa, including Tizen AVPlay and WebOS audio handles.
-export function installAudioLabels(Lampa) {
+export function installAudioLabels(Lampa: Lampa) {
   if (
     !Lampa.Player.listener ||
     !Lampa.PlayerVideo ||
@@ -35,14 +37,14 @@ export function installAudioLabels(Lampa) {
   ) {
     return;
   }
-  var current = null;
+  var current: Work | null = null;
   Lampa.Player.listener.follow('start', function (work) {
     current = work && Array.isArray(work._kinolampAudios) ? work : null;
   });
   Lampa.Player.listener.follow('destroy', function () {
     current = null;
   });
-  function update(event) {
+  function update(event: PlayerEvent) {
     if (
       !current ||
       !event ||
@@ -52,7 +54,7 @@ export function installAudioLabels(Lampa) {
       return;
     }
     var tracks = event.tracks;
-    var audios = current._kinolampAudios.slice();
+    var audios = current._kinolampAudios!.slice();
     if (
       audios.every(function (audio) {
         return Number(audio.index) > 0;

@@ -1,24 +1,47 @@
+import type {
+  MenuEntry,
+  Route,
+  PageRoute,
+  Row,
+  LoadMore,
+  PageLoader,
+  JQueryNode,
+  JQuery,
+  NativePage,
+  Navigator,
+  Lampa
+} from './contracts.js';
+
 import PAGE_STYLES from './pages.css';
 import { httpsURL } from './text.js';
-export function createNativePages(Lampa, $, navigation, load, activate) {
+export function createNativePages(
+  Lampa: Lampa,
+  $: JQuery,
+  navigation: Navigator | undefined,
+  load: PageLoader,
+  activate: (row: Row) => void
+) {
   if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) {
     return null;
   }
-  var active = null;
+  var active: NativePage | null = null;
   $('body').append($('<style></style>').text(PAGE_STYLES));
-  Lampa.Component.add('kinolamp', function (object) {
+  Lampa.Component.add('kinolamp', function (this: NativePage, object: Route) {
     var self = this;
     var isAlive = true;
     var isSuspended = false;
     var requestId = 0;
-    var focusedElement = false;
-    var captions = [];
-    var isStale = null;
-    var more = null;
+    var focusedElement: HTMLElement | false = false;
+    var captions: { node: JQueryNode; row: Row }[] = [];
+    var isStale: (() => boolean) | null = null;
+    var more: LoadMore | null = null;
     var loadingMore = false;
     var moreFailed = false;
     var moreRequest = 0;
-    var seen = Object.create(null);
+    var seen: Record<string, boolean> = Object.create(null) as Record<
+      string,
+      boolean
+    >;
     var view = $('<div class="kp-page"></div>');
     var head = $('<div class="kp-page__head"></div>');
     var title = $('<div class="kp-page__title"></div>').text('KinoPub');
@@ -40,7 +63,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     scroll.append(grid);
     scroll.append(pagination);
     view.append(head).append(status).append(scroll.render());
-    function buttons(actions, target) {
+    function buttons(actions: MenuEntry[], target?: JQueryNode) {
       actions.forEach(function (action) {
         var button = $(
           '<div class="simple-button selector kp-page__action"></div>'
@@ -69,7 +92,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
         );
       });
     }
-    function appendRows(rows) {
+    function appendRows(rows: Row[]) {
       var count = captions.length;
       rows.forEach(function (row) {
         if (row.key && seen[row.key]) {
@@ -136,7 +159,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
         if (row.menu) {
           card.on('hover:long', function () {
             if (isAlive && !isSuspended) {
-              row.menu();
+              row.menu!();
             }
           });
         }
@@ -190,8 +213,8 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
             pagination
           );
         } else {
-          var added = appendRows(data.rows);
-          more = added ? data.more || null : null;
+          var added = appendRows(data!.rows);
+          more = added ? data!.more || null : null;
         }
         Lampa.Controller.collectionSet(view);
         Lampa.Controller.collectionFocus(focusedElement, view);
@@ -204,7 +227,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
       more = null;
       loadingMore = false;
       moreFailed = false;
-      seen = Object.create(null);
+      seen = Object.create(null) as Record<string, boolean>;
       status.text('Загрузка…');
       self.activity.loader(true);
       load(object, function (error, data) {
@@ -225,20 +248,20 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
           status.text(error);
           buttons([{ title: 'Повторить', run: self.create }]);
         } else {
-          isStale = data.isStale || null;
-          title.text(data.title);
-          details.text(data.details || '');
-          description.text(data.description || '');
-          grid.attr('data-layout', data.layout || 'posters');
-          buttons(data.actions || []);
+          isStale = data!.isStale || null;
+          title.text(data!.title);
+          details.text(data!.details || '');
+          description.text(data!.description || '');
+          grid.attr('data-layout', data!.layout || 'posters');
+          buttons(data!.actions || []);
           status.text(
-            data.rows.length
-              ? data.hint || 'Выбери подходящий результат.'
-              : data.empty ||
+            data!.rows.length
+              ? data!.hint || 'Выбери подходящий результат.'
+              : data!.empty ||
                   'Ничего не найдено. Вернись назад и выбери другой материал.'
           );
-          appendRows(data.rows);
-          more = data.rows.length ? data.more || null : null;
+          appendRows(data!.rows);
+          more = data!.rows.length ? data!.more || null : null;
         }
         if (!isSuspended) {
           self.activity.toggle();
@@ -312,7 +335,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     };
   });
   return {
-    show: function (route) {
+    show: function (route: PageRoute) {
       // Activity history must contain only route data, never DOM nodes, callbacks or API tokens.
       Lampa.Activity.push({
         component: 'kinolamp',

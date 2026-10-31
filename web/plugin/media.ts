@@ -1,12 +1,28 @@
+import type {
+  Audio,
+  File,
+  Video,
+  Item,
+  Movie,
+  Context,
+  Stream,
+  QueueEntry
+} from './contracts.js';
+
 import { httpsURL } from './text.js';
-function qualityOf(file) {
+function qualityOf(file: File) {
   return (
     parseInt(String(file.quality || file.h || '').replace(/[^0-9]/g, ''), 10) ||
     0
   );
 }
-function streams(files, proxy, maxHeight, multipleAudios) {
-  var result = [];
+function streams(
+  files: File[] | null | undefined,
+  proxy: boolean,
+  maxHeight: number,
+  multipleAudios?: boolean
+) {
+  var result: Stream[] = [];
   // HLS2 may expose only the default voice. Keep every quality on HLS4 when
   // KinoPub advertises multiple voices, so Lampa can discover native tracks.
   var useHLS4 =
@@ -35,9 +51,9 @@ function streams(files, proxy, maxHeight, multipleAudios) {
   });
   return limited.length ? limited : result.slice(-1);
 }
-function audioTitle(audio, index) {
+function audioTitle(audio: Audio, index: number) {
   var type = audio.type && (audio.type.title || audio.type.short_title);
-  var types = {
+  var types: Record<string, string> = {
     DUB: 'Дубляж',
     MVO: 'Многоголосый',
     DVO: 'Двухголосый',
@@ -45,7 +61,7 @@ function audioTitle(audio, index) {
     VO: 'Одноголосый',
     ORIG: 'Оригинал'
   };
-  var languages = {
+  var languages: Record<string, string> = {
     ru: 'Русский',
     rus: 'Русский',
     en: 'Английский',
@@ -84,7 +100,7 @@ function audioTitle(audio, index) {
     label + (lang ? ' (' + (languages[lang] || lang.toUpperCase()) + ')' : '')
   );
 }
-function voiceIdentity(audio) {
+function voiceIdentity(audio: Audio) {
   return JSON.stringify([
     audio.lang || '',
     (audio.type && (audio.type.id || audio.type.title)) || '',
@@ -92,8 +108,8 @@ function voiceIdentity(audio) {
     audio.codec || ''
   ]).toLowerCase();
 }
-function episodeQueue(item) {
-  var result = [];
+function episodeQueue(item: Item) {
+  var result: QueueEntry[] = [];
   (item.seasons || []).forEach(function (season, seasonIndex) {
     (season.episodes || []).forEach(function (video, episodeIndex) {
       result.push({
@@ -113,8 +129,8 @@ function episodeQueue(item) {
   });
 }
 
-function matchItem(movie, items) {
-  function title(value) {
+function matchItem(movie: Movie, items?: Item[]) {
+  function title(value: unknown) {
     return String(value || '')
       .toLowerCase()
       .replace(/ё/g, 'е')
@@ -152,7 +168,7 @@ function matchItem(movie, items) {
   return exact.length === 1 ? exact[0] : null;
 }
 
-function mediaKey(item, video, context) {
+function mediaKey(item: Item, video: Video, context: Context) {
   if (item.id === undefined || item.id === null) {
     return '';
   }

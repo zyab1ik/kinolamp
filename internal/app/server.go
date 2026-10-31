@@ -28,6 +28,7 @@ type rate struct {
 
 var publicAssets = map[string]struct{ name, contentType string }{
 	"/":          {"static/index.html", "text/html; charset=utf-8"},
+	"/kp":        {"static/kp.js", "application/javascript; charset=utf-8"},
 	"/kp.js":     {"static/kp.js", "application/javascript; charset=utf-8"},
 	"/style.css": {"static/style.css", "text/css; charset=utf-8"},
 	"/icon.svg":  {"static/icon.svg", "image/svg+xml"},

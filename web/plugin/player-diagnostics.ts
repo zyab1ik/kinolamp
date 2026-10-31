@@ -1,35 +1,52 @@
+import type {
+  Action,
+  Client,
+  Ui,
+  Diagnostics,
+  Transport,
+  DiagnosticData,
+  JQuery,
+  Lampa,
+  Setting,
+  SettingAction,
+  Root
+} from './contracts.js';
+
 import { httpsURL } from './text.js';
 export function createPlayerDiagnostics(
-  Lampa,
-  $,
-  root,
-  client,
-  transport,
-  diagnostics,
-  ui
+  Lampa: Lampa,
+  $: JQuery,
+  root: Root,
+  client: Client,
+  transport: Transport,
+  diagnostics: Diagnostics,
+  ui: Ui
 ) {
   var notify = ui.notify;
   var restore = ui.restore;
   var menu = ui.menu;
-  var diagnosticWork = null;
-  var diagnosticVideo = null;
-  var diagnosticHandlers = [];
+  var diagnosticWork: DiagnosticData | null | undefined = null;
+  var diagnosticVideo: HTMLVideoElement | null = null;
+  var diagnosticHandlers: { event: string; run: Action }[] = [];
   var diagnosticFirst = true;
   var diagnosticSample = -Infinity;
   var lastCDN = '';
-  var pendingProbe = null;
+  var pendingProbe: XMLHttpRequest | null = null;
   function detachDiagnosticVideo() {
     diagnosticHandlers.forEach(function (binding) {
-      diagnosticVideo.removeEventListener(binding.event, binding.run);
+      diagnosticVideo!.removeEventListener(binding.event, binding.run);
     });
     diagnosticHandlers = [];
     diagnosticVideo = null;
   }
-  function captureDiagnostic(event) {
+  function captureDiagnostic(event: string) {
     if (!diagnostics.enabled() || !diagnosticWork) {
       return;
     }
-    var data = { mode: diagnosticWork.mode, format: diagnosticWork.format };
+    var data: DiagnosticData = {
+      mode: diagnosticWork.mode,
+      format: diagnosticWork.format
+    };
     try {
       if (diagnosticVideo) {
         data.current = diagnosticVideo.currentTime;
@@ -67,7 +84,7 @@ export function createPlayerDiagnostics(
       data.result = 'unsupported';
     }
     if (event === 'playing' && diagnosticFirst) {
-      data.ms = Date.now() - diagnosticWork.requested;
+      data.ms = Date.now() - diagnosticWork.requested!;
       diagnosticFirst = false;
     }
     diagnostics.record(event, data);
@@ -94,7 +111,7 @@ export function createPlayerDiagnostics(
       var run = function () {
         captureDiagnostic(event);
       };
-      video.addEventListener(event, run);
+      video!.addEventListener(event, run);
       diagnosticHandlers.push({ event: event, run: run });
     });
   }
@@ -155,12 +172,12 @@ export function createPlayerDiagnostics(
       pendingProbe = null;
     }
   }
-  function probeDiagnostic(kind) {
+  function probeDiagnostic(kind: string) {
     if (!diagnostics.enabled()) {
       return;
     }
     var finish = diagnostics.begin('probe_' + kind);
-    function done(status, result) {
+    function done(status: number, result: string) {
       if (finish({ status: status, result: result })) {
         notify('Проверка завершена. Результат в локальном отчёте.');
       }
@@ -180,7 +197,7 @@ export function createPlayerDiagnostics(
       transport('GET', base + '/health', null, {}, function (error, json) {
         done(
           error ? Number(error.status) || 0 : 200,
-          !error && json.ok === true ? 'ok' : 'error'
+          !error && json!.ok === true ? 'ok' : 'error'
         );
       });
       return;
@@ -203,12 +220,12 @@ export function createPlayerDiagnostics(
       xhr.open('HEAD', lastCDN, true);
       xhr.timeout = 15000;
       xhr.withCredentials = false;
-      function result(code) {
+      var result = function (code: string) {
         if (pendingProbe === xhr) {
           pendingProbe = null;
         }
         done(Number(xhr.status) || 0, code);
-      }
+      };
       xhr.onload = function () {
         result(xhr.status >= 200 && xhr.status < 400 ? 'ok' : 'error');
       };
@@ -228,7 +245,7 @@ export function createPlayerDiagnostics(
     }
   }
 
-  function registerSettings(setting, action) {
+  function registerSettings(setting: Setting, action: SettingAction) {
     Lampa.Template.add('settings_kp_self_diagnostics', '<div></div>');
     action(
       'diagnostics',
@@ -358,7 +375,7 @@ export function createPlayerDiagnostics(
       'kp_self_diagnostics'
     );
   }
-  function source(url) {
+  function source(url: string) {
     if (diagnostics.enabled()) {
       lastCDN = url;
     }

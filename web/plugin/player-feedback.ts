@@ -1,6 +1,8 @@
+import type { Lampa } from './contracts.js';
+
 // Keep Lampa's player and recovery logic intact; translate only known nonfatal
 // HLS messages for Kinolamp playback. Never render arbitrary upstream text.
-export function installPlayerFeedback(Lampa) {
+export function installPlayerFeedback(Lampa: Lampa) {
   if (
     !Lampa.Player.listener ||
     !Lampa.PlayerVideo ||
@@ -11,7 +13,7 @@ export function installPlayerFeedback(Lampa) {
     return;
   }
   var owned = false;
-  var messages = {
+  var messages: Record<string, string> = {
     bufferFullError:
       'Буфер плеера переполнен. Если видео зависло, перезапусти воспроизведение или смени плеер в настройках Lampa.',
     bufferStalledError: 'Буферизация: плеер ожидает продолжения видео.',

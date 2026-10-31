@@ -1,6 +1,14 @@
+import type { Diagnostics, Reply, ApiResponse, Lampa } from './contracts.js';
+
 import { API } from './config.js';
-export function createTransport(Lampa, diagnostics) {
-  function transport(method, url, body, headers, done) {
+export function createTransport(Lampa: Lampa, diagnostics: Diagnostics) {
+  function transport(
+    method: string,
+    url: string,
+    body: string | null,
+    headers: Record<string, string>,
+    done: Reply<ApiResponse>
+  ) {
     var complete = done;
     var finish = diagnostics.begin(
       url.indexOf(API + '/v1/') === 0
@@ -23,7 +31,7 @@ export function createTransport(Lampa, diagnostics) {
       function (json) {
         if (typeof json === 'string') {
           try {
-            json = JSON.parse(json);
+            json = JSON.parse(json) as unknown;
           } catch (_) {
             done({ code: 'bad_response' });
             return;
@@ -33,8 +41,8 @@ export function createTransport(Lampa, diagnostics) {
           done({ code: 'bad_response' });
           return;
         }
-        if (json.error) {
-          done({ code: String(json.error) });
+        if ((json as ApiResponse).error) {
+          done({ code: String((json as ApiResponse).error) });
           return;
         }
         done(null, json);
@@ -42,7 +50,8 @@ export function createTransport(Lampa, diagnostics) {
       function (xhr) {
         var code = 'network_error';
         try {
-          code = JSON.parse(xhr.responseText).error || code;
+          code =
+            (JSON.parse(xhr.responseText!) as { error?: string }).error || code;
         } catch (_) {
           // Keep the generic error when upstream did not return JSON.
         }

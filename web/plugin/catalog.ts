@@ -1,4 +1,22 @@
-export function createCatalog(Lampa, client, pages, ui) {
+import type {
+  Id,
+  Params,
+  Client,
+  Ui,
+  Pages,
+  Item,
+  Route,
+  PageRoute,
+  PageReply,
+  Lampa
+} from './contracts.js';
+
+export function createCatalog(
+  Lampa: Lampa,
+  client: Client,
+  pages: Pages | null,
+  ui: Ui
+) {
   var notify = ui.notify;
   var menu = ui.menu;
   var errorMessage = ui.errorMessage;
@@ -17,8 +35,8 @@ export function createCatalog(Lampa, client, pages, ui) {
     }
     pages.show({ view: 'catalog', section: 'new', page: 1 });
   }
-  function catalogRoute(route, changes) {
-    var result = {
+  function catalogRoute(route: Route, changes: Partial<PageRoute>) {
+    var result: PageRoute = {
       view: 'catalog',
       section: route.kp_section || 'new',
       page: route.kp_page || 1,
@@ -35,12 +53,12 @@ export function createCatalog(Lampa, client, pages, ui) {
     });
     return result;
   }
-  function catalogSearch(route) {
+  function catalogSearch(route: Route) {
     if (!Lampa.Input || !Lampa.Input.edit) {
       notify('В этой сборке Lampa недоступна клавиатура поиска.');
       return;
     }
-    var owner = pages.current();
+    var owner = pages!.current();
     Lampa.Input.edit(
       {
         title: 'Поиск в KinoPub',
@@ -50,10 +68,10 @@ export function createCatalog(Lampa, client, pages, ui) {
         nomic: true
       },
       function (value) {
-        if (pages.current() !== owner) {
+        if (pages!.current() !== owner) {
           return;
         }
-        pages.resume();
+        pages!.resume();
         var query = String(value || '')
           .trim()
           .slice(0, 100);
@@ -64,7 +82,7 @@ export function createCatalog(Lampa, client, pages, ui) {
           notify('Введи минимум три символа.');
           return;
         }
-        pages.show(
+        pages!.show(
           catalogRoute(route, {
             section: 'search',
             query: query,
@@ -79,8 +97,8 @@ export function createCatalog(Lampa, client, pages, ui) {
       }
     );
   }
-  function catalogFilters(route) {
-    var owner = pages.current();
+  function catalogFilters(route: Route) {
+    var owner = pages!.current();
     menu('Фильтры KinoPub', [
       {
         title: 'Жанр: ' + (route.kp_genre_title || 'Все'),
@@ -97,7 +115,7 @@ export function createCatalog(Lampa, client, pages, ui) {
       {
         title: 'Сбросить фильтры',
         run: function () {
-          pages.show(
+          pages!.show(
             catalogRoute(route, {
               page: 1,
               genre: '',
@@ -109,16 +127,18 @@ export function createCatalog(Lampa, client, pages, ui) {
         }
       }
     ]);
-    function choose(path, key, label) {
+    function choose(path: string, key: string, label: string) {
       client.api(path, {}, function (error, json) {
-        if (pages.current() !== owner) {
+        if (pages!.current() !== owner) {
           return;
         }
         if (error) {
           notify(errorMessage(error));
           return;
         }
-        var values = Array.isArray(json) ? json : json.items || [];
+        var values: Item[] = Array.isArray(json)
+          ? (json as Item[])
+          : json!.items || [];
         menu(
           key === 'genre' ? 'Жанр' : 'Качество',
           [
@@ -140,40 +160,40 @@ export function createCatalog(Lampa, client, pages, ui) {
           )
         );
       });
-      function select(id, title) {
-        if (pages.current() !== owner) {
+      function select(id: Id, title: string) {
+        if (pages!.current() !== owner) {
           return;
         }
-        var changes = { page: 1 };
+        var changes: Partial<PageRoute> = { page: 1 };
         changes[key] = id;
         changes[label] = title;
-        pages.show(catalogRoute(route, changes));
+        pages!.show(catalogRoute(route, changes));
       }
     }
   }
-  function bookmarkMenu(item) {
-    var owner = pages.current();
+  function bookmarkMenu(item: Item) {
+    var owner = pages!.current();
     client.api('/bookmarks', {}, function (error, json) {
-      if (pages.current() !== owner) {
+      if (pages!.current() !== owner) {
         return;
       }
       if (error) {
         notify(errorMessage(error));
         return;
       }
-      var folders = json.items || [];
+      var folders = json!.items || [];
       client.api(
         '/bookmarks/get-item-folders',
         { item: item.id },
         function (error, memberships) {
-          if (pages.current() !== owner) {
+          if (pages!.current() !== owner) {
             return;
           }
           if (error) {
             notify(errorMessage(error));
             return;
           }
-          var present = (memberships.folders || []).map(function (folder) {
+          var present = (memberships!.folders || []).map(function (folder) {
             return String(folder.id);
           });
           var choices = folders.map(function (folder) {
@@ -192,26 +212,26 @@ export function createCatalog(Lampa, client, pages, ui) {
             choices.push({
               title: 'Создать папку «Избранное» и добавить',
               run: function () {
-                if (pages.current() !== owner) {
+                if (pages!.current() !== owner) {
                   return;
                 }
                 client.api(
                   '/bookmarks/create',
                   { title: 'Избранное' },
                   function (error, result) {
-                    if (!error && result.folder && result.folder.id) {
+                    if (!error && result!.folder && result!.folder.id) {
                       bookmarkRevision++;
                     }
-                    if (pages.current() !== owner) {
+                    if (pages!.current() !== owner) {
                       return;
                     }
-                    if (error || !result.folder || !result.folder.id) {
+                    if (error || !result!.folder || !result!.folder.id) {
                       notify(
                         'Не удалось создать папку KinoPub. Повтори позже.'
                       );
                       return;
                     }
-                    change(result.folder.id, false);
+                    change(result!.folder.id, false);
                   },
                   false,
                   true
@@ -223,8 +243,8 @@ export function createCatalog(Lampa, client, pages, ui) {
         }
       );
     });
-    function change(folder, remove) {
-      if (pages.current() !== owner) {
+    function change(folder: Id, remove: boolean) {
+      if (pages!.current() !== owner) {
         return;
       }
       client.api(
@@ -234,7 +254,7 @@ export function createCatalog(Lampa, client, pages, ui) {
           if (!error) {
             bookmarkRevision++;
           }
-          if (pages.current() !== owner) {
+          if (pages!.current() !== owner) {
             return;
           }
           if (error) {
@@ -244,17 +264,17 @@ export function createCatalog(Lampa, client, pages, ui) {
           notify(
             remove ? 'Удалено из папки KinoPub.' : 'Добавлено в папку KinoPub.'
           );
-          pages.refresh();
+          pages!.refresh();
         },
         false,
         true
       );
     }
   }
-  function catalogRows(route, done) {
+  function catalogRows(route: Route, done: PageReply) {
     var loadedRevision = bookmarkRevision;
     var loadedGeneration = client.generation();
-    var names = {
+    var names: Record<string, string> = {
       new: 'Новинки',
       movies: 'Фильмы',
       series: 'Сериалы',
@@ -267,21 +287,21 @@ export function createCatalog(Lampa, client, pages, ui) {
       folders: 'Избранное',
       folder: 'Избранное'
     };
-    var section = Object.prototype.hasOwnProperty.call(names, route.kp_section)
-      ? route.kp_section
+    var section = Object.prototype.hasOwnProperty.call(names, route.kp_section!)
+      ? route.kp_section!
       : 'new';
     var page = Math.min(
       10000,
       Math.max(1, Math.floor(Number(route.kp_page) || 1))
     );
-    var sorts = {
+    var sorts: Record<string, string> = {
       'created-': 'По дате добавления',
       'updated-': 'По обновлению',
       'rating-': 'По рейтингу',
       'views-': 'По просмотрам'
     };
-    var sort = Object.prototype.hasOwnProperty.call(sorts, route.kp_sort)
-      ? route.kp_sort
+    var sort = Object.prototype.hasOwnProperty.call(sorts, route.kp_sort!)
+      ? route.kp_sort!
       : section === 'new'
         ? 'created-'
         : 'updated-';
@@ -293,7 +313,7 @@ export function createCatalog(Lampa, client, pages, ui) {
             if (name === 'search') {
               catalogSearch(route);
             } else {
-              pages.show(
+              pages!.show(
                 catalogRoute(route, {
                   section: name,
                   page: 1,
@@ -329,7 +349,7 @@ export function createCatalog(Lampa, client, pages, ui) {
             return {
               title: (section === name ? '✓ ' : '') + names[name],
               run: function () {
-                pages.show(
+                pages!.show(
                   catalogRoute(route, {
                     section: name,
                     page: 1,
@@ -348,7 +368,7 @@ export function createCatalog(Lampa, client, pages, ui) {
         );
       }
     });
-    var params = { page: page, perpage: 20 };
+    var params: Params = { page: page, perpage: 20 };
     var path = '/items';
     if (section === 'search') {
       path += '/search';
@@ -357,11 +377,11 @@ export function createCatalog(Lampa, client, pages, ui) {
       path =
         section === 'folders'
           ? '/bookmarks'
-          : '/bookmarks/' + encodeURIComponent(route.kp_folder);
+          : '/bookmarks/' + encodeURIComponent(String(route.kp_folder));
       params = {};
     } else {
       params.sort = sort;
-      var sectionTypes = {
+      var sectionTypes: Record<string, string> = {
         movies: 'movie',
         series: 'serial',
         documentaries: 'documovie',
@@ -394,7 +414,7 @@ export function createCatalog(Lampa, client, pages, ui) {
               return {
                 title: (value === sort ? '✓ ' : '') + sorts[value],
                 run: function () {
-                  pages.show(catalogRoute(route, { sort: value, page: 1 }));
+                  pages!.show(catalogRoute(route, { sort: value, page: 1 }));
                 }
               };
             })
@@ -407,12 +427,12 @@ export function createCatalog(Lampa, client, pages, ui) {
         done(errorMessage(error));
         return;
       }
-      var items = json.items || [];
+      var items = json!.items || [];
       var total = Math.min(
         10000,
         Math.max(
           1,
-          Math.floor(Number(json.pagination && json.pagination.total) || 1)
+          Math.floor(Number(json!.pagination && json!.pagination.total) || 1)
         )
       );
       if (bookmarks) {
@@ -430,8 +450,8 @@ export function createCatalog(Lampa, client, pages, ui) {
           'KinoPub · ' +
           (section === 'search'
             ? '«' + params.q + '»'
-            : section === 'folder' && json.folder
-              ? json.folder.title
+            : section === 'folder' && json!.folder
+              ? json!.folder.title
               : names[section]),
         details: [
           !bookmarks && section !== 'search' && route.kp_genre_title,
@@ -451,7 +471,7 @@ export function createCatalog(Lampa, client, pages, ui) {
         more:
           page < total && items.length
             ? function (callback) {
-                var next = {};
+                var next: Route = {};
                 Object.keys(route).forEach(function (key) {
                   next[key] = route[key];
                 });
@@ -476,7 +496,7 @@ export function createCatalog(Lampa, client, pages, ui) {
             };
           }
           var image = item.posters || {};
-          var types = {
+          var types: Record<string, string> = {
             movie: 'Фильм',
             serial: 'Сериал',
             documovie: 'Документальный фильм',
@@ -487,7 +507,7 @@ export function createCatalog(Lampa, client, pages, ui) {
           };
           var titles = String(item.title || '').split(' / ');
           var quality = Number(item.quality);
-          var badges = [];
+          var badges: string[] = [];
           if (quality > 100) {
             badges.push(quality === 2160 ? 'UHD 4K' : quality + 'p');
           }
@@ -512,7 +532,7 @@ export function createCatalog(Lampa, client, pages, ui) {
                   return genre.title;
                 })
                 .filter(Boolean)
-                .join(', ') || types[item.type]
+                .join(', ') || types[String(item.type)]
             ]
               .filter(Boolean)
               .join(' · '),

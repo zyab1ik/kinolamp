@@ -1,5 +1,12 @@
+import type { Ui, Movie, MenuEntry, JQuery, Lampa } from './contracts.js';
+
 import icon from '../static/icon.svg';
-export function installWatch(Lampa, $, search, ui) {
+export function installWatch(
+  Lampa: Lampa,
+  $: JQuery,
+  search: (movie: Movie) => void,
+  ui: Ui
+) {
   var notify = ui.notify;
   var menu = ui.menu;
   Lampa.Listener.follow('full', function (event) {
@@ -7,7 +14,7 @@ export function installWatch(Lampa, $, search, ui) {
       !event ||
       event.type !== 'complite' ||
       !event.data ||
-      !event.data.movie
+      !event.data.movie!
     ) {
       return;
     }
@@ -26,7 +33,7 @@ export function installWatch(Lampa, $, search, ui) {
     var button = $('<div class="full-start__button kp-self-button"></div>');
     button.append($(icon)).append($('<span></span>').text('KinoPub'));
     button.on('hover:enter', function () {
-      search(event.data.movie);
+      search(event.data!.movie!);
     });
     target.append(button);
     // Extend Lampa's button grouping after its own source handlers are installed.
@@ -39,10 +46,10 @@ export function installWatch(Lampa, $, search, ui) {
             .find('.button--play')
             .unbind('hover:enter hover:long')
             .on('hover:enter', function () {
-              search(event.data.movie);
+              search(event.data!.movie!);
             })
             .on('hover:long', function () {
-              var sources = [];
+              var sources: MenuEntry[] = [];
               html
                 .find('.buttons--container > .full-start__button')
                 .not('.hide')

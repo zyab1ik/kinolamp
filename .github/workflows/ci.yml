@@ -33,7 +33,7 @@ jobs:
           package-manager-cache: false
       - name: Install pinned JavaScript development tools
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Check formatting, static analysis and JavaScript syntax
+      - name: Check formatting, TypeScript types and ES5 syntax
         run: make check
       - name: Validate GitHub Actions workflow
         run: make check-ci
@@ -180,6 +180,7 @@ jobs:
         if: steps.latest.outputs.deploy == 'true'
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --max-time 15 https://kp.eu3.filefor.net/health
+          curl --fail --silent --show-error --max-time 15 -I https://kp.eu3.filefor.net/kp
           curl --fail --silent --show-error --max-time 15 -I https://kp.eu3.filefor.net/kp.js
           echo '### Deployment complete' >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: \`$GITHUB_SHA\` · [Open Kinolamp](https://kp.eu3.filefor.net/)" >> "$GITHUB_STEP_SUMMARY"

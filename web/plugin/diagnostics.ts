@@ -1,8 +1,9 @@
+import type { Store, DiagnosticData, DiagnosticsReport } from './contracts.js';
 import { PREFIX, VERSION } from './config.js';
 // Diagnostics is an allowlist, not a scrubber: arbitrary URLs, messages, titles
 // and request/response objects can never enter the report, even as nested fields.
-export function createDiagnostics(storage, now) {
-  var entries = [];
+export function createDiagnostics(storage: Store, now: () => number) {
+  var entries: DiagnosticData[] = [];
   var generation = 0;
   var started = now();
   var events = [
@@ -37,15 +38,21 @@ export function createDiagnostics(storage, now) {
     'other'
   ];
   function enabled() {
-    var value = storage.get(PREFIX + 'diagnostics_enabled', false);
+    var value = storage.get<boolean | string>(
+      PREFIX + 'diagnostics_enabled',
+      false
+    );
     return value === true || value === 'true';
   }
-  function record(event, data) {
+  function record(event: string, data?: DiagnosticData) {
     if (!enabled() || events.indexOf(event) === -1) {
       return;
     }
     data = data || {};
-    var entry = { event: event, at: Math.max(0, now() - started) };
+    var entry: DiagnosticData = {
+      event: event,
+      at: Math.max(0, now() - started)
+    };
     [
       'ms',
       'status',
@@ -65,13 +72,13 @@ export function createDiagnostics(storage, now) {
         entry[key] = Math.round(value * 100) / 100;
       }
     });
-    if (['direct', 'proxy'].indexOf(data.mode) !== -1) {
+    if (['direct', 'proxy'].indexOf(data.mode!) !== -1) {
       entry.mode = data.mode;
     }
-    if (['hls2', 'hls4', 'hls', 'http'].indexOf(data.format) !== -1) {
+    if (['hls2', 'hls4', 'hls', 'http'].indexOf(data.format!) !== -1) {
       entry.format = data.format;
     }
-    if (['mse', 'direct_src'].indexOf(data.path) !== -1) {
+    if (['mse', 'direct_src'].indexOf(data.path!) !== -1) {
       entry.path = data.path;
     }
     if (typeof data.nativeHls === 'boolean') {
@@ -86,11 +93,11 @@ export function createDiagnostics(storage, now) {
         'not_configured',
         'unsupported',
         'cancelled'
-      ].indexOf(data.result) !== -1
+      ].indexOf(data.result!) !== -1
     ) {
       entry.result = data.result;
     }
-    if (details.indexOf(data.detail) !== -1) {
+    if (details.indexOf(data.detail!) !== -1) {
       entry.detail = data.detail;
     }
     if (typeof data.fatal === 'boolean') {
@@ -102,18 +109,18 @@ export function createDiagnostics(storage, now) {
     }
     return true;
   }
-  function begin(event) {
+  function begin(event: string) {
     var time = now();
     var current = generation;
     var collecting = enabled();
-    return function (data) {
+    return function (data: DiagnosticData) {
       if (!collecting || current !== generation) {
         return;
       }
       return record(event, {
         ms: Math.max(0, now() - time),
         status: data.status,
-        result: data.result
+        result: data.result!
       });
     };
   }
@@ -126,7 +133,7 @@ export function createDiagnostics(storage, now) {
       generation++;
       started = now();
     },
-    report: function () {
+    report: function (): DiagnosticsReport {
       return JSON.parse(
         JSON.stringify({
           schema: 1,
@@ -135,7 +142,7 @@ export function createDiagnostics(storage, now) {
           scope: 'local-session-last-120-events',
           events: entries
         })
-      );
+      ) as DiagnosticsReport;
     }
   };
 }

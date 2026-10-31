@@ -1,13 +1,25 @@
+import type { Progress, PlaybackState, Work, Lampa } from './contracts.js';
+interface ProgressSession {
+  work: Work;
+  key: string;
+  seek: number;
+  time: number;
+  duration: number;
+  ready: boolean;
+  savedAt: number;
+  waitForSeek?: number;
+  ended?: boolean;
+}
 /** Bridges player lifecycle events to local progress without overwriting a pending seek. */
-export function createProgressTracker(Lampa, progress) {
-  var session = null;
+export function createProgressTracker(Lampa: Lampa, progress: Progress) {
+  var session: ProgressSession | null = null;
   var canSaveProgress = !!(
     Lampa.Player.listener &&
     Lampa.PlayerVideo &&
     Lampa.PlayerVideo.listener &&
     Lampa.PlayerVideo.to
   );
-  function saveSession(ended) {
+  function saveSession(ended: boolean) {
     if (session && session.ready) {
       session.ended = session.ended || ended;
       progress.save(session.key, session.time, session.duration, session.ended);
@@ -77,7 +89,7 @@ export function createProgressTracker(Lampa, progress) {
     });
   }
 
-  function attach(work, playback) {
+  function attach(work: Work, playback: PlaybackState) {
     if (canSaveProgress && playback.key) {
       work._kinolampProgress = { key: playback.key, time: playback.time };
       work.timeline = {

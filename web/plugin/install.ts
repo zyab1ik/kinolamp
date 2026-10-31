@@ -1,3 +1,5 @@
+import type { Playback, Catalog, JQuery, Lampa, Root } from './contracts.js';
+
 import { VERSION } from './config.js';
 import { createClient } from './client.js';
 import { createProgress } from './progress.js';
@@ -14,8 +16,9 @@ import { installWatch } from './watch.js';
 import { installPlayerFeedback } from './player-feedback.js';
 import { installAudioLabels } from './audio-labels.js';
 import catalogIcon from './kinopub.svg';
-function nameExtension(Lampa, root) {
-  var script = root.document && root.document.currentScript;
+function nameExtension(Lampa: Lampa, root: Root) {
+  var script =
+    root.document && (root.document.currentScript as HTMLScriptElement | null);
   if (
     !script ||
     !script.src ||
@@ -40,7 +43,7 @@ function nameExtension(Lampa, root) {
   }
 }
 
-export function install(Lampa, $, root) {
+export function install(Lampa: Lampa, $: JQuery, root: Root) {
   if (!$ || !Lampa.SettingsApi || !Lampa.Select || !Lampa.Reguest) {
     return;
   }
@@ -62,8 +65,8 @@ export function install(Lampa, $, root) {
     ui
   );
   // Page callbacks run after registration, when both controllers have been created.
-  var playback;
-  var catalog;
+  var playback: Playback;
+  var catalog: Catalog;
   var pages = createNativePages(
     Lampa,
     $,
@@ -102,7 +105,7 @@ export function install(Lampa, $, root) {
   installWatch(Lampa, $, playback.search, ui);
   if (pages && Lampa.Menu && Lampa.Menu.addButton) {
     var catalogMenuAdded = false;
-    function addCatalogMenu() {
+    var addCatalogMenu = function () {
       if (catalogMenuAdded) {
         return;
       }
@@ -111,7 +114,7 @@ export function install(Lampa, $, root) {
         'data-action',
         'kinolamp'
       );
-    }
+    };
     if (root.appready) {
       addCatalogMenu();
     } else {

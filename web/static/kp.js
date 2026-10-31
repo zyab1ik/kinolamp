@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.13 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.4.0 — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.13';
+    var VERSION = '0.4.0';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -38,7 +38,9 @@
       return Object.keys(values)
         .map(function (key) {
           return (
-            encodeURIComponent(key) + '=' + encodeURIComponent(values[key])
+            encodeURIComponent(key) +
+            '=' +
+            encodeURIComponent(String(values[key]))
           );
         })
         .join('&');
@@ -138,7 +140,9 @@
         }
         var expected = generation;
         var query = encodeForm(params || {});
-        var headers = { Authorization: 'Bearer ' + get('access') };
+        var headers = {
+          Authorization: 'Bearer ' + get('access')
+        };
         if (post) {
           headers['Content-Type'] = 'application/x-www-form-urlencoded';
         }
@@ -314,7 +318,10 @@
           return;
         }
         data = data || {};
-        var entry = { event: event, at: Math.max(0, now() - started) };
+        var entry = {
+          event: event,
+          at: Math.max(0, now() - started)
+        };
         [
           'ms',
           'status',
@@ -462,7 +469,6 @@
           { headers: headers }
         );
       }
-
       return transport;
     }
 
@@ -511,7 +517,6 @@
         }
         return 'Запрос не выполнен. Проверь сеть, подписку и настройки. Подробные данные не отправляются в логи.';
       }
-
       return {
         notify: notify,
         restore: restore,
@@ -674,7 +679,6 @@
           login(run);
         }
       }
-
       function logout() {
         if (pendingLogin) {
           stopLogin();
@@ -719,7 +723,10 @@
         if (!diagnostics.enabled() || !diagnosticWork) {
           return;
         }
-        var data = { mode: diagnosticWork.mode, format: diagnosticWork.format };
+        var data = {
+          mode: diagnosticWork.mode,
+          format: diagnosticWork.format
+        };
         try {
           if (diagnosticVideo) {
             data.current = diagnosticVideo.currentTime;
@@ -896,12 +903,12 @@
           xhr.open('HEAD', lastCDN, true);
           xhr.timeout = 15000;
           xhr.withCredentials = false;
-          function result(code) {
+          var result = function (code) {
             if (pendingProbe === xhr) {
               pendingProbe = null;
             }
             done(Number(xhr.status) || 0, code);
-          }
+          };
           xhr.onload = function () {
             result(xhr.status >= 200 && xhr.status < 400 ? 'ok' : 'error');
           };
@@ -920,7 +927,6 @@
           done(0, 'unsupported');
         }
       }
-
       function registerSettings(setting, action) {
         Lampa.Template.add('settings_kp_self_diagnostics', '<div></div>');
         action(
@@ -1630,7 +1636,6 @@
         );
       });
     }
-
     function matchItem(movie, items) {
       function title(value) {
         return String(value || '')
@@ -1669,7 +1674,6 @@
       });
       return exact.length === 1 ? exact[0] : null;
     }
-
     function mediaKey(item, video, context) {
       if (item.id === undefined || item.id === null) {
         return '';
@@ -1707,7 +1711,6 @@
           }
         });
       }
-
       return function playlist(item, video, work, playback) {
         var entries = [work];
         if (
@@ -1818,7 +1821,6 @@
           });
           owner.entries = entries;
         }
-
         return entries;
       };
     }
@@ -1906,7 +1908,6 @@
           session = null;
         });
       }
-
       function attach(work, playback) {
         if (canSaveProgress && playback.key) {
           work._kinolampProgress = { key: playback.key, time: playback.time };
@@ -1951,8 +1952,7 @@
       var playlist = createEpisodePlaylist(Lampa, client, openVideo, notify);
       var tracker = createProgressTracker(Lampa, progress);
       var loadSeasonPosters = createSeasonPosters(Lampa);
-
-      // Resolve a unique card match before asking the viewer to choose a result.
+      // Resolve a unique card match before asking the viewer to choose a result!.
       function search(movie) {
         var query =
           movie.title ||
@@ -2502,7 +2502,6 @@
           notify('Не удалось запустить плеер Lampa.');
         }
       }
-
       // Native pages contain display data; signed playback links stay out of routes.
       function pageRows(route, done) {
         function imageURL(value) {
@@ -2563,7 +2562,7 @@
           return;
         }
         client.api(
-          '/items/' + encodeURIComponent(route.kp_id),
+          '/items/' + encodeURIComponent(String(route.kp_id)),
           { nolinks: 0 },
           function (error, json) {
             if (error || !json.item) {
@@ -2680,7 +2679,6 @@
           });
         }
       }
-
       function resetProgress() {
         tracker.clear();
         progress.clear();
@@ -3060,7 +3058,7 @@
           path =
             section === 'folders'
               ? '/bookmarks'
-              : '/bookmarks/' + encodeURIComponent(route.kp_folder);
+              : '/bookmarks/' + encodeURIComponent(String(route.kp_folder));
           params = {};
         } else {
           params.sort = sort;
@@ -3215,7 +3213,7 @@
                       return genre.title;
                     })
                     .filter(Boolean)
-                    .join(', ') || types[item.type]
+                    .join(', ') || types[String(item.type)]
                 ]
                   .filter(Boolean)
                   .join(' · '),
@@ -3231,7 +3229,6 @@
           });
         });
       }
-
       return { open: openCatalog, load: catalogRows };
     }
 
@@ -3366,7 +3363,6 @@
         });
       });
       action('catalog', 'Открыть каталог KinoPub', catalog.open, true);
-
       playerDiagnostics.registerSettings(setting, action);
       action('privacy', 'О плагине и приватности', function () {
         notify(
@@ -3525,7 +3521,6 @@
       };
       return code === 'und' ? '' : aliases[code] || code;
     }
-
     // Translate names only. The original native track objects and their enabled
     // setters remain owned by Lampa, including Tizen AVPlay and WebOS audio handles.
     function installAudioLabels(Lampa) {
@@ -3637,7 +3632,6 @@
         Lampa.Plugins.save();
       }
     }
-
     function install(Lampa, $, root) {
       if (!$ || !Lampa.SettingsApi || !Lampa.Select || !Lampa.Reguest) {
         return;
@@ -3700,7 +3694,7 @@
       installWatch(Lampa, $, playback.search, ui);
       if (pages && Lampa.Menu && Lampa.Menu.addButton) {
         var catalogMenuAdded = false;
-        function addCatalogMenu() {
+        var addCatalogMenu = function () {
           if (catalogMenuAdded) {
             return;
           }
@@ -3709,7 +3703,7 @@
             'data-action',
             'kinolamp'
           );
-        }
+        };
         if (root.appready) {
           addCatalogMenu();
         } else {

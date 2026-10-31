@@ -9,14 +9,17 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "eslint web/plugin web/static/kp.js scripts/build-plugin.mjs eslint.config.mjs && prettier --check \"web/plugin/**/*.{js,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json && node scripts/build-plugin.mjs --check",
-    "build:plugin": "node scripts/build-plugin.mjs",
-    "format": "eslint web/plugin scripts/build-plugin.mjs eslint.config.mjs --fix && prettier --write \"web/plugin/**/*.{js,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json"
+    "check": "npm run typecheck && eslint web/plugin web/static/kp.js scripts/build-plugin.mjs eslint.config.mjs && prettier --check \"web/plugin/**/*.{ts,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json tsconfig.json && node scripts/build-plugin.mjs --check",
+    "build:plugin": "npm run typecheck && node scripts/build-plugin.mjs",
+    "format": "eslint web/plugin scripts/build-plugin.mjs eslint.config.mjs --fix && prettier --write \"web/plugin/**/*.{ts,css}\" scripts/build-plugin.mjs eslint.config.mjs .prettierrc.json package.json tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.13.0",
     "prettier": "3.9.10",
-    "rollup": "4.66.0"
+    "rollup": "4.66.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
   }
 }

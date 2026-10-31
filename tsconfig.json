@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES5", "DOM", "ES2015.Core"],
+    "strict": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["web/plugin/**/*.ts"]
+}

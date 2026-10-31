@@ -1,14 +1,16 @@
+import type { Action, PluginError, MenuEntry, Lampa } from './contracts.js';
+
 import { escapeText } from './text.js';
-export function createUi(Lampa) {
-  function notify(message) {
+export function createUi(Lampa: Lampa) {
+  function notify(message: string) {
     Lampa.Noty.show(message);
   }
-  function restore(name) {
+  function restore(name?: string) {
     if (name) {
       Lampa.Controller.toggle(name);
     }
   }
-  function menu(title, entries, back) {
+  function menu(title: string, entries: MenuEntry[], back?: Action | null) {
     var previous = (Lampa.Controller.enabled() || {}).name;
     Lampa.Select.show({
       title: escapeText(title),
@@ -32,7 +34,7 @@ export function createUi(Lampa) {
       }
     });
   }
-  function errorMessage(error) {
+  function errorMessage(error?: PluginError | null) {
     if (error && error.code === 'invalid_client') {
       return 'KinoPub временно не принимает общий клиент. Повтори вход позже или проверь обновления Kinolamp.';
     }

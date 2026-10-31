@@ -1,18 +1,22 @@
+import type { Store, ProgressRecord } from './contracts.js';
+
 import { PREFIX } from './config.js';
-export function createProgress(storage) {
+export function createProgress(storage: Store) {
   var key = PREFIX + 'progress';
   function records() {
-    var data = storage.get(key, {});
+    var data: Record<string, ProgressRecord> = storage.get<
+      Record<string, ProgressRecord>
+    >(key, {});
     return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
   }
-  function write(data) {
+  function write(data: Record<string, ProgressRecord>) {
     try {
       storage.set(key, data);
     } catch (_) {
       /* A full local store must not stop playback. */
     }
   }
-  function get(id) {
+  function get(id: string) {
     var entry = records()[id];
     return entry &&
       typeof entry.time === 'number' &&
@@ -24,7 +28,7 @@ export function createProgress(storage) {
       ? entry
       : null;
   }
-  function save(id, time, duration, ended) {
+  function save(id: string, time: number, duration: number, ended?: boolean) {
     if (
       !id ||
       typeof time !== 'number' ||
@@ -36,7 +40,7 @@ export function createProgress(storage) {
     ) {
       return;
     }
-    var data = records();
+    var data: Record<string, ProgressRecord> = records();
     time = Math.min(time, duration);
     data[id] = {
       time: time,
@@ -57,8 +61,8 @@ export function createProgress(storage) {
       });
     write(data);
   }
-  function clear(id) {
-    var data = records();
+  function clear(id?: string) {
+    var data: Record<string, ProgressRecord> = records();
     if (id) {
       delete data[id];
     } else {
@@ -66,7 +70,7 @@ export function createProgress(storage) {
     }
     write(data);
   }
-  function label(id) {
+  function label(id: string) {
     var entry = get(id);
     return entry
       ? entry.watched

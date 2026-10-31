@@ -1,11 +1,29 @@
+import type {
+  Action,
+  Client,
+  Video,
+  Item,
+  PlaybackState,
+  OpenVideo,
+  QueueOwner,
+  QueueEntry,
+  Work,
+  Lampa
+} from './contracts.js';
+
 import { escapeText } from './text.js';
 import { episodeQueue, mediaKey } from './media.js';
 
 /** Fresh links are resolved only when Lampa selects the next episode. */
-export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
+export function createEpisodePlaylist(
+  Lampa: Lampa,
+  client: Client,
+  openVideo: OpenVideo,
+  notify: (message: string) => void
+) {
   // In-flight episode responses belong to one player lifecycle only.
   var navigation = 0;
-  var queueOwner = null;
+  var queueOwner: QueueOwner | null = null;
   if (Lampa.Player.listener) {
     Lampa.Player.listener.follow('create', function () {
       navigation++;
@@ -15,16 +33,21 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
     });
     Lampa.Player.listener.follow('start', function (work) {
       if (queueOwner && work && work._kinolampQueueId === queueOwner.id) {
-        queueOwner.entries.forEach(function (entry) {
+        queueOwner.entries!.forEach(function (entry) {
           if (entry !== work) {
-            entry.url = entry._kinolampLoad;
+            entry.url = entry._kinolampLoad!;
           }
         });
       }
     });
   }
 
-  return function playlist(item, video, work, playback) {
+  return function playlist(
+    item: Item,
+    video: Video,
+    work: Work,
+    playback: PlaybackState
+  ) {
     var entries = [work];
     if (
       playback.context.kind === 'episode' &&
@@ -32,7 +55,7 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
       Lampa.Player.close &&
       playback.key
     ) {
-      var owner = {
+      var owner: QueueOwner = {
         id: navigation + 1,
         height: playback.height,
         voice: playback.voice,
@@ -43,7 +66,7 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
       queueOwner = owner;
       entries = episodeQueue(item).map(function (entry) {
         var id = mediaKey(item, entry.video, entry.context);
-        var target =
+        var target: Work =
           id === playback.key
             ? work
             : {
@@ -59,7 +82,7 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
         target.season = entry.context.season;
         target.episode = entry.context.number;
         target._kinolampQueueId = owner.id;
-        target._kinolampLoad = function (ready) {
+        target._kinolampLoad = function (ready: Action) {
           if (owner.loading || queueOwner !== owner) {
             return;
           }
@@ -84,11 +107,14 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
               }
               var next =
                 !error &&
-                json.item &&
-                episodeQueue(json.item).filter(function (candidate) {
+                json!.item &&
+                episodeQueue(json!.item).filter(function (candidate) {
                   return (
-                    mediaKey(json.item, candidate.video, candidate.context) ===
-                    id
+                    mediaKey(
+                      json!.item!,
+                      candidate.video,
+                      candidate.context
+                    ) === id
                   );
                 })[0];
               if (!next) {
@@ -98,10 +124,10 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
                 failed();
                 return;
               }
-              openVideo(json.item, next.video, null, next.context, {
+              openVideo(json!.item!, next.video, null, next.context, {
                 automatic: true,
                 transition: {
-                  height: owner.height,
+                  height: owner.height!,
                   voice: owner.voice,
                   fail: failed,
                   valid: current,
@@ -114,7 +140,7 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
                       target[key] = prepared[key];
                     });
                     owner.current = target;
-                    owner.video = next.video;
+                    owner.video = (next as QueueEntry).video;
                     owner.height = options.height;
                     owner.voice = options.voice;
                     ready();
@@ -125,7 +151,7 @@ export function createEpisodePlaylist(Lampa, client, openVideo, notify) {
           );
         };
         if (target !== work) {
-          target.url = target._kinolampLoad;
+          target.url = target._kinolampLoad!;
         }
         return target;
       });

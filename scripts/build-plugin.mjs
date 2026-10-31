@@ -1,7 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { fileURLToPath, URL } from 'node:url';
+import { fileURLToPath, pathToFileURL, URL } from 'node:url';
 import { rollup } from 'rollup';
 import { format } from 'prettier';
+import ts from 'typescript';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const version = (await readFile(root + 'VERSION', 'utf8')).trim();
@@ -18,12 +19,29 @@ const wrapper = `(function (root, factory) {
   'use strict';
 `;
 const bundle = await rollup({
-  input: root + 'web/plugin/index.js',
+  input: root + 'web/plugin/index.ts',
   // Every source function stays in the artifact and must pass coverage checks.
   treeshake: false,
   plugins: [
     {
-      name: 'inline-local-assets',
+      name: 'typescript-and-local-assets',
+      resolveId(source, importer) {
+        if (importer && source.startsWith('.') && source.endsWith('.js'))
+          return fileURLToPath(
+            new URL(source.replace(/\.js$/, '.ts'), pathToFileURL(importer))
+          );
+        return null;
+      },
+      transform(source, id) {
+        if (!id.endsWith('.ts')) return null;
+        return ts.transpileModule(source, {
+          compilerOptions: {
+            target: ts.ScriptTarget.ES5,
+            module: ts.ModuleKind.ESNext,
+            verbatimModuleSyntax: true
+          }
+        }).outputText;
+      },
       async load(id) {
         if (!/\.(css|svg)$/.test(id)) return null;
         let source = await readFile(id, 'utf8');
@@ -45,7 +63,7 @@ try {
     generatedCode: 'es5'
   });
   const source = await format(
-    `/* Kinolamp ${version} — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */\n` +
+    `/* Kinolamp ${version} — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */\n` +
       wrapper +
       chunks[0].code +
       '\nreturn plugin;\n});\n',

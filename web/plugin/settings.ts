@@ -1,13 +1,24 @@
+import type {
+  Action,
+  Client,
+  Ui,
+  Authorization,
+  Playback,
+  Catalog,
+  PlayerDiagnostics,
+  Lampa
+} from './contracts.js';
+
 import { VERSION, PREFIX } from './config.js';
 import icon from '../static/icon.svg';
 export function installSettings(
-  Lampa,
-  client,
-  authorization,
-  playback,
-  catalog,
-  playerDiagnostics,
-  ui
+  Lampa: Lampa,
+  client: Client,
+  authorization: Authorization,
+  playback: Playback,
+  catalog: Catalog,
+  playerDiagnostics: PlayerDiagnostics,
+  ui: Ui
 ) {
   var notify = ui.notify;
   var menu = ui.menu;
@@ -17,7 +28,15 @@ export function installSettings(
     icon: icon
   });
   Lampa.Template.add('settings_kp_self_advanced', '<div></div>');
-  function setting(key, type, name, description, values, initial, advanced) {
+  function setting(
+    key: string,
+    type: string,
+    name: string,
+    description: string,
+    values: Record<string, string> | string,
+    initial: string | boolean,
+    advanced?: string | boolean
+  ) {
     Lampa.SettingsApi.addParam({
       component:
         typeof advanced === 'string'
@@ -50,7 +69,12 @@ export function installSettings(
       }
     });
   }
-  function action(key, name, run, advanced) {
+  function action(
+    key: string,
+    name: string,
+    run: Action,
+    advanced?: string | boolean
+  ) {
     Lampa.SettingsApi.addParam({
       component:
         typeof advanced === 'string'

@@ -1,7 +1,12 @@
+import type { Item, Lampa } from './contracts.js';
+interface SeasonPoster {
+  number?: number;
+  poster: string;
+}
 // Resolve artwork by identity, never by an ambiguous translated title.
 // Reuse Lampa's TMDB client/proxy/cache; KinoPub tokens never enter these calls.
-export function createSeasonPosters(Lampa) {
-  return function load(item, done) {
+export function createSeasonPosters(Lampa: Lampa) {
+  return function load(item: Item, done: (seasons: SeasonPoster[]) => void) {
     var imdb = String(item.imdb || '').replace(/^tt/, '');
     var source = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
     if (
@@ -21,7 +26,7 @@ export function createSeasonPosters(Lampa) {
     var settled = false;
     // Artwork is optional. A slow metadata service must not block season choice.
     var timer = setTimeout(finish, 2500);
-    function finish(seasons) {
+    function finish(seasons?: SeasonPoster[]) {
       if (settled) {
         return;
       }
