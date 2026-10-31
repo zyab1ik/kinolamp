@@ -78,7 +78,7 @@ jobs:
       - name: Run JavaScript tests and coverage
         run: make coverage-js
   container:
-    name: Container build and smoke test
+    name: Container
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -86,26 +86,40 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build container image
+      - name: Build image
         run: make docker-build
-      - name: Verify non-root user and container health
+      - name: Verify non-root user
+        run: test "$(docker image inspect -f '{{.Config.User}}' kinolamp:local)" = 65532:65532
+      - name: Start container
+        run: docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 kinolamp:local
+      - name: Check health endpoint
         run: |
-          test "$(docker image inspect -f '{{.Config.User}}' kinolamp:local)" = 65532:65532
-          docker run -d --name kp --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8788:3000 kinolamp:local
-          trap 'docker rm -f kp' EXIT
           for attempt in $(seq 1 20); do
-            if curl --fail --silent http://127.0.0.1:8788/health; then exit 0; fi
+            if curl --fail --silent --connect-timeout 1 --max-time 3 http://127.0.0.1:8788/health; then exit 0; fi
             sleep 1
           done
+          echo 'Container did not become healthy after 20 attempts.' >&2
           exit 1
-      - name: Package verified image for deployment
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          if docker container inspect kp > /dev/null 2>&1; then
+            docker logs --timestamps --tail 100 kp
+          fi
+      - name: Clean up container
+        if: always()
+        run: |
+          if docker container inspect kp > /dev/null 2>&1; then
+            docker rm --force kp
+          fi
+      - name: Package image
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         env:
           REVISION: ${{ github.sha }}
         run: |
           docker tag kinolamp:local "kinolamp:$REVISION"
           docker save "kinolamp:$REVISION" | gzip -1 > kinolamp-image.tar.gz
-      - name: Upload deployment artifact
+      - name: Upload artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
