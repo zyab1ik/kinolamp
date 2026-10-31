@@ -27,6 +27,7 @@ export function createCatalog(Lampa, client, pages, ui) {
       genreTitle: route.kp_genre_title || '',
       quality: route.kp_quality || '',
       qualityTitle: route.kp_quality_title || '',
+      sort: route.kp_sort || '',
       folder: route.kp_folder || ''
     };
     Object.keys(changes).forEach(function (key) {
@@ -257,6 +258,11 @@ export function createCatalog(Lampa, client, pages, ui) {
       new: 'Новинки',
       movies: 'Фильмы',
       series: 'Сериалы',
+      documentaries: 'Документальные фильмы',
+      docuseries: 'Документальные сериалы',
+      concerts: 'Концерты',
+      shows: 'ТВ-шоу',
+      stereo: '3D-фильмы',
       search: 'Поиск',
       folders: 'Избранное',
       folder: 'Избранное'
@@ -268,6 +274,17 @@ export function createCatalog(Lampa, client, pages, ui) {
       10000,
       Math.max(1, Math.floor(Number(route.kp_page) || 1))
     );
+    var sorts = {
+      'created-': 'По дате добавления',
+      'updated-': 'По обновлению',
+      'rating-': 'По рейтингу',
+      'views-': 'По просмотрам'
+    };
+    var sort = Object.prototype.hasOwnProperty.call(sorts, route.kp_sort)
+      ? route.kp_sort
+      : section === 'new'
+        ? 'created-'
+        : 'updated-';
     var actions = ['new', 'movies', 'series', 'search', 'folders'].map(
       function (name) {
         return {
@@ -294,6 +311,43 @@ export function createCatalog(Lampa, client, pages, ui) {
       }
     );
     var bookmarks = section === 'folder' || section === 'folders';
+    actions.splice(3, 0, {
+      title: 'Разделы',
+      run: function () {
+        menu(
+          'Библиотека KinoPub',
+          [
+            'new',
+            'movies',
+            'series',
+            'documentaries',
+            'docuseries',
+            'concerts',
+            'shows',
+            'stereo'
+          ].map(function (name) {
+            return {
+              title: (section === name ? '✓ ' : '') + names[name],
+              run: function () {
+                pages.show(
+                  catalogRoute(route, {
+                    section: name,
+                    page: 1,
+                    query: '',
+                    folder: '',
+                    genre: '',
+                    genreTitle: '',
+                    quality: '',
+                    qualityTitle: '',
+                    sort: ''
+                  })
+                );
+              }
+            };
+          })
+        );
+      }
+    });
     var params = { page: page, perpage: 20 };
     var path = '/items';
     if (section === 'search') {
@@ -306,12 +360,18 @@ export function createCatalog(Lampa, client, pages, ui) {
           : '/bookmarks/' + encodeURIComponent(route.kp_folder);
       params = {};
     } else {
-      params.sort = section === 'new' ? 'created-' : 'updated-';
-      if (section === 'movies') {
-        params.type = 'movie';
-      }
-      if (section === 'series') {
-        params.type = 'serial';
+      params.sort = sort;
+      var sectionTypes = {
+        movies: 'movie',
+        series: 'serial',
+        documentaries: 'documovie',
+        docuseries: 'docuserial',
+        concerts: 'concert',
+        shows: 'tvshow',
+        stereo: '3D'
+      };
+      if (sectionTypes[section]) {
+        params.type = sectionTypes[section];
       }
       if (route.kp_genre) {
         params.genre = route.kp_genre;
@@ -323,6 +383,22 @@ export function createCatalog(Lampa, client, pages, ui) {
         title: 'Фильтры',
         run: function () {
           catalogFilters(route);
+        }
+      });
+      actions.push({
+        title: sorts[sort],
+        run: function () {
+          menu(
+            'Сортировка KinoPub',
+            Object.keys(sorts).map(function (value) {
+              return {
+                title: (value === sort ? '✓ ' : '') + sorts[value],
+                run: function () {
+                  pages.show(catalogRoute(route, { sort: value, page: 1 }));
+                }
+              };
+            })
+          );
         }
       });
     }
@@ -343,20 +419,6 @@ export function createCatalog(Lampa, client, pages, ui) {
         total = Math.max(1, Math.ceil(items.length / 20));
         items = items.slice((page - 1) * 20, page * 20);
       }
-      function pagination(number, title) {
-        actions.push({
-          title: title,
-          run: function () {
-            pages.show(catalogRoute(route, { section: section, page: number }));
-          }
-        });
-      }
-      if (page > 1) {
-        pagination(page - 1, '← Предыдущая страница');
-      }
-      if (page < total) {
-        pagination(page + 1, 'Следующая страница →');
-      }
       done(null, {
         isStale: function () {
           return (
@@ -372,7 +434,6 @@ export function createCatalog(Lampa, client, pages, ui) {
               ? json.folder.title
               : names[section]),
         details: [
-          'Страница ' + page + ' из ' + total,
           !bookmarks && section !== 'search' && route.kp_genre_title,
           !bookmarks && section !== 'search' && route.kp_quality_title
         ]
@@ -381,15 +442,28 @@ export function createCatalog(Lampa, client, pages, ui) {
         hint:
           section === 'folders'
             ? 'Выбери папку закладок своего аккаунта KinoPub.'
-            : 'Долгое нажатие на карточку — закладки KinoPub. Озвучку выбирай в плеере.',
+            : 'Удерживай OK на карточке, чтобы добавить в закладки.',
         empty: bookmarks
           ? 'Пока пусто. Добавляй материалы долгим нажатием на карточку в каталоге.'
           : 'Ничего не найдено. Измени поиск или фильтры.',
-        layout: section === 'folders' ? 'folders' : 'posters',
+        layout: section === 'folders' ? 'folders' : 'catalog',
         actions: actions,
+        more:
+          page < total && items.length
+            ? function (callback) {
+                var next = {};
+                Object.keys(route).forEach(function (key) {
+                  next[key] = route[key];
+                });
+                next.kp_page = page + 1;
+                next.kp_section = section;
+                catalogRows(next, callback);
+              }
+            : null,
         rows: items.map(function (item) {
           if (section === 'folders') {
             return {
+              key: 'folder:' + item.id,
               title: item.title,
               subtitle: 'Материалов: ' + (Number(item.count) || 0),
               symbol: '★',
@@ -411,17 +485,39 @@ export function createCatalog(Lampa, client, pages, ui) {
             tvshow: 'ТВ-шоу',
             '3D': '3D'
           };
+          var titles = String(item.title || '').split(' / ');
+          var quality = Number(item.quality);
+          var badges = [];
+          if (quality > 100) {
+            badges.push(quality === 2160 ? 'UHD 4K' : quality + 'p');
+          }
+          if (Number(item.ac3) > 0) {
+            badges.push('AC3');
+          }
+          var rating = Number(item.imdb_rating);
           return {
-            title: item.title,
+            key:
+              item.id === undefined || item.id === null
+                ? ''
+                : 'item:' + item.id,
+            title: titles[0],
+            original: titles.slice(1).join(' / '),
+            badges: badges,
+            rating:
+              rating > 0 && rating <= 10 ? 'IMDb ' + rating.toFixed(1) : '',
             subtitle: [
               item.year,
-              types[item.type],
-              Number(item.quality) > 100 ? item.quality + 'p' : ''
+              (item.genres || [])
+                .map(function (genre) {
+                  return genre.title;
+                })
+                .filter(Boolean)
+                .join(', ') || types[item.type]
             ]
               .filter(Boolean)
               .join(' · '),
             poster: String(
-              image.medium || image.big || image.small || ''
+              image.big || image.medium || image.small || ''
             ).replace(/^http:/, 'https:'),
             next: { view: 'item', id: item.id },
             menu: function () {

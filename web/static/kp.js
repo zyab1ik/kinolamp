@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.12 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.3.13 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.12';
+    var VERSION = '0.3.13';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -1064,7 +1064,7 @@
     }
 
     var PAGE_STYLES =
-      ".kp-page {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 1.5em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.7em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 1em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n  font-size: 0.95em;\n  line-height: 1.35;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n";
+      ".kp-page {\n  font-family: inherit;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 1.5em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.7em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 1em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__card {\n  display: flex;\n  flex-direction: column;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__poster {\n  border-radius: 0.4em;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__name {\n  order: 1;\n}\n.kp-page__original {\n  order: 2;\n  font-size: 0.85em;\n  line-height: 1.35;\n  margin-top: 0.25em;\n  opacity: 0.55;\n  word-wrap: break-word;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__meta {\n  order: 3;\n  font-size: 0.85em;\n  line-height: 1.4;\n  opacity: 0.75;\n}\n.kp-page__badges {\n  position: absolute;\n  top: 0.55em;\n  left: 0.55em;\n  right: 0.55em;\n}\n.kp-page__badge {\n  display: inline-block;\n  margin: 0 0.35em 0.35em 0;\n  padding: 0.25em 0.45em;\n  border-radius: 0.3em;\n  background: #143b2c;\n  color: #b6f4cf;\n  font-size: 0.75em;\n  font-weight: 600;\n}\n.kp-page__rating {\n  position: absolute;\n  bottom: 0.55em;\n  left: 0.55em;\n  padding: 0.3em 0.5em;\n  border-radius: 0.3em;\n  background: rgba(0, 0, 0, 0.8);\n  color: #fff;\n  font-size: 0.8em;\n}\n.kp-page__pagination {\n  margin-top: 1.8em;\n  justify-content: center;\n}\n.kp-page__pagination:empty {\n  display: none;\n}\n\n.kp-page__loading {\n  font: inherit;\n  width: 100%;\n  text-align: center;\n  opacity: 0.7;\n  padding: 0.6em;\n}\n";
 
     function createNativePages(Lampa, $, navigation, load, activate) {
       if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) {
@@ -1080,6 +1080,11 @@
         var focusedElement = false;
         var captions = [];
         var isStale = null;
+        var more = null;
+        var loadingMore = false;
+        var moreFailed = false;
+        var moreRequest = 0;
+        var seen = Object.create(null);
         var view = $('<div class="kp-page"></div>');
         var head = $('<div class="kp-page__head"></div>');
         var title = $('<div class="kp-page__title"></div>').text('KinoPub');
@@ -1088,6 +1093,9 @@
         ).text('Загрузка…');
         var grid = $('<div class="kp-page__grid"></div>');
         var toolbar = $('<div class="kp-page__toolbar"></div>');
+        var pagination = $(
+          '<div class="kp-page__toolbar kp-page__pagination"></div>'
+        );
         var details = $('<div class="kp-page__details"></div>');
         var description = $('<div class="kp-page__description"></div>');
         var scroll = new Lampa.Scroll({ mask: true, over: true });
@@ -1096,9 +1104,177 @@
         scroll.append(details);
         scroll.append(description);
         scroll.append(grid);
+        scroll.append(pagination);
         view.append(head).append(status).append(scroll.render());
+        function buttons(actions, target) {
+          actions.forEach(function (action) {
+            var button = $(
+              '<div class="simple-button selector kp-page__action"></div>'
+            ).text(action.title);
+            button.on('hover:focus', function () {
+              focusedElement = button[0];
+              scroll.update(button, true);
+            });
+            button.on('hover:enter', function () {
+              if (isAlive && !isSuspended) {
+                action.run();
+              }
+            });
+            (target || toolbar).append(button);
+            if (!focusedElement) {
+              focusedElement = button[0];
+            }
+          });
+        }
+        function updateCaptions() {
+          captions.forEach(function (label) {
+            label.node.text(
+              typeof label.row.subtitle === 'function'
+                ? label.row.subtitle()
+                : label.row.subtitle
+            );
+          });
+        }
+        function appendRows(rows) {
+          var count = captions.length;
+          rows.forEach(function (row) {
+            if (row.key && seen[row.key]) {
+              return;
+            }
+            if (row.key) {
+              seen[row.key] = true;
+            }
+            var position = captions.length;
+            var card = $('<div class="kp-page__card selector"></div>');
+            var poster = $('<div class="kp-page__poster"></div>');
+            poster.append(
+              $('<span class="kp-page__placeholder"></span>').text(
+                row.symbol || '▶'
+              )
+            );
+            if (httpsURL(row.poster)) {
+              poster.append(
+                $('<img loading="lazy" alt="">')
+                  .attr('src', row.poster)
+                  .on('error', function () {
+                    $(this).remove();
+                  })
+              );
+            }
+            card
+              .append(poster)
+              .append(
+                $('<div class="kp-page__name card__title"></div>').text(
+                  row.title
+                )
+              );
+            var meta = $('<div class="kp-page__meta"></div>');
+            card.append(meta);
+            if (row.original) {
+              card.append(
+                $('<div class="kp-page__original"></div>').text(row.original)
+              );
+            }
+            var badges = $('<div class="kp-page__badges"></div>');
+            (row.badges || []).forEach(function (label) {
+              badges.append(
+                $('<span class="kp-page__badge"></span>').text(label)
+              );
+            });
+            poster.append(badges);
+            if (row.rating) {
+              poster.append(
+                $('<span class="kp-page__rating"></span>').text(row.rating)
+              );
+            }
+            captions.push({ node: meta, row: row });
+            if (!focusedElement) {
+              focusedElement = card[0];
+            }
+            card.on('hover:focus', function () {
+              focusedElement = card[0];
+              scroll.update(card, true);
+              if (position >= captions.length - 5) {
+                loadMore();
+              }
+            });
+            card.on('hover:enter', function () {
+              if (isAlive && !isSuspended) {
+                activate(row);
+              }
+            });
+            if (row.menu) {
+              card.on('hover:long', function () {
+                if (isAlive && !isSuspended) {
+                  row.menu();
+                }
+              });
+            }
+            grid.append(card);
+          });
+          updateCaptions();
+          return captions.length - count;
+        }
+        function loadMore() {
+          if (!isAlive || isSuspended || loadingMore || moreFailed || !more) {
+            return;
+          }
+          var expected = ++moreRequest;
+          loadingMore = true;
+          pagination
+            .empty()
+            .append(
+              $('<div class="kp-page__loading" role="status"></div>').text(
+                'Загрузка…'
+              )
+            );
+          more(function (error, data) {
+            if (!isAlive || isSuspended || expected !== moreRequest) {
+              return;
+            }
+            loadingMore = false;
+            pagination.empty();
+            if (isStale && isStale()) {
+              more = null;
+              return;
+            }
+            if (error) {
+              moreFailed = true;
+              var beforeRetry = focusedElement;
+              pagination.append(
+                $('<div class="kp-page__loading" role="status"></div>').text(
+                  'Не удалось загрузить следующие карточки.'
+                )
+              );
+              buttons(
+                [
+                  {
+                    title: 'Повторить',
+                    run: function () {
+                      moreFailed = false;
+                      focusedElement = beforeRetry;
+                      loadMore();
+                    }
+                  }
+                ],
+                pagination
+              );
+            } else {
+              var added = appendRows(data.rows);
+              more = added ? data.more || null : null;
+            }
+            Lampa.Controller.collectionSet(view);
+            Lampa.Controller.collectionFocus(focusedElement, view);
+          });
+        }
+        scroll.onEnd = loadMore;
         this.create = function () {
           var expected = ++requestId;
+          moreRequest++;
+          more = null;
+          loadingMore = false;
+          moreFailed = false;
+          seen = Object.create(null);
           status.text('Загрузка…');
           self.activity.loader(true);
           load(object, function (error, data) {
@@ -1108,29 +1284,10 @@
             self.activity.loader(false);
             grid.empty();
             toolbar.empty();
+            pagination.empty();
             focusedElement = false;
             captions = [];
             isStale = null;
-            function buttons(actions) {
-              actions.forEach(function (action) {
-                var button = $(
-                  '<div class="simple-button selector kp-page__action"></div>'
-                ).text(action.title);
-                button.on('hover:focus', function () {
-                  focusedElement = button[0];
-                  scroll.update(button, true);
-                });
-                button.on('hover:enter', function () {
-                  if (isAlive && !isSuspended) {
-                    action.run();
-                  }
-                });
-                toolbar.append(button);
-                if (!focusedElement) {
-                  focusedElement = button[0];
-                }
-              });
-            }
             if (error) {
               title.text('KinoPub');
               details.text('');
@@ -1150,52 +1307,8 @@
                   : data.empty ||
                       'Ничего не найдено. Вернись назад и выбери другой материал.'
               );
-              data.rows.forEach(function (row) {
-                var card = $('<div class="kp-page__card selector"></div>');
-                var poster = $('<div class="kp-page__poster"></div>');
-                poster.append(
-                  $('<span class="kp-page__placeholder"></span>').text(
-                    row.symbol || '▶'
-                  )
-                );
-                if (httpsURL(row.poster)) {
-                  poster.append(
-                    $('<img loading="lazy" alt="">')
-                      .attr('src', row.poster)
-                      .on('error', function () {
-                        $(this).remove();
-                      })
-                  );
-                }
-                card
-                  .append(poster)
-                  .append(
-                    $('<div class="kp-page__name"></div>').text(row.title)
-                  );
-                var meta = $('<div class="kp-page__meta"></div>');
-                card.append(meta);
-                captions.push({ node: meta, row: row });
-                if (!focusedElement) {
-                  focusedElement = card[0];
-                }
-                card.on('hover:focus', function () {
-                  focusedElement = card[0];
-                  scroll.update(card, true);
-                });
-                card.on('hover:enter', function () {
-                  if (isAlive && !isSuspended) {
-                    activate(row);
-                  }
-                });
-                if (row.menu) {
-                  card.on('hover:long', function () {
-                    if (isAlive && !isSuspended) {
-                      row.menu();
-                    }
-                  });
-                }
-                grid.append(card);
-              });
+              appendRows(data.rows);
+              more = data.rows.length ? data.more || null : null;
             }
             if (!isSuspended) {
               self.activity.toggle();
@@ -1212,13 +1325,7 @@
             self.create();
             return;
           }
-          captions.forEach(function (label) {
-            label.node.text(
-              typeof label.row.subtitle === 'function'
-                ? label.row.subtitle()
-                : label.row.subtitle
-            );
-          });
+          updateCaptions();
           Lampa.Controller.add('content', {
             toggle: function () {
               Lampa.Controller.collectionSet(view);
@@ -1255,6 +1362,11 @@
         };
         this.pause = function () {
           isSuspended = true;
+          moreRequest++;
+          if (loadingMore) {
+            loadingMore = false;
+            pagination.empty();
+          }
           if (active === self) {
             active = null;
           }
@@ -1285,6 +1397,7 @@
             kp_genre_title: route.genreTitle,
             kp_quality: route.quality,
             kp_quality_title: route.qualityTitle,
+            kp_sort: route.sort,
             kp_folder: route.folder
           });
         },
@@ -2612,6 +2725,7 @@
           genreTitle: route.kp_genre_title || '',
           quality: route.kp_quality || '',
           qualityTitle: route.kp_quality_title || '',
+          sort: route.kp_sort || '',
           folder: route.kp_folder || ''
         };
         Object.keys(changes).forEach(function (key) {
@@ -2844,6 +2958,11 @@
           new: 'Новинки',
           movies: 'Фильмы',
           series: 'Сериалы',
+          documentaries: 'Документальные фильмы',
+          docuseries: 'Документальные сериалы',
+          concerts: 'Концерты',
+          shows: 'ТВ-шоу',
+          stereo: '3D-фильмы',
           search: 'Поиск',
           folders: 'Избранное',
           folder: 'Избранное'
@@ -2858,6 +2977,17 @@
           10000,
           Math.max(1, Math.floor(Number(route.kp_page) || 1))
         );
+        var sorts = {
+          'created-': 'По дате добавления',
+          'updated-': 'По обновлению',
+          'rating-': 'По рейтингу',
+          'views-': 'По просмотрам'
+        };
+        var sort = Object.prototype.hasOwnProperty.call(sorts, route.kp_sort)
+          ? route.kp_sort
+          : section === 'new'
+            ? 'created-'
+            : 'updated-';
         var actions = ['new', 'movies', 'series', 'search', 'folders'].map(
           function (name) {
             return {
@@ -2884,6 +3014,43 @@
           }
         );
         var bookmarks = section === 'folder' || section === 'folders';
+        actions.splice(3, 0, {
+          title: 'Разделы',
+          run: function () {
+            menu(
+              'Библиотека KinoPub',
+              [
+                'new',
+                'movies',
+                'series',
+                'documentaries',
+                'docuseries',
+                'concerts',
+                'shows',
+                'stereo'
+              ].map(function (name) {
+                return {
+                  title: (section === name ? '✓ ' : '') + names[name],
+                  run: function () {
+                    pages.show(
+                      catalogRoute(route, {
+                        section: name,
+                        page: 1,
+                        query: '',
+                        folder: '',
+                        genre: '',
+                        genreTitle: '',
+                        quality: '',
+                        qualityTitle: '',
+                        sort: ''
+                      })
+                    );
+                  }
+                };
+              })
+            );
+          }
+        });
         var params = { page: page, perpage: 20 };
         var path = '/items';
         if (section === 'search') {
@@ -2896,12 +3063,18 @@
               : '/bookmarks/' + encodeURIComponent(route.kp_folder);
           params = {};
         } else {
-          params.sort = section === 'new' ? 'created-' : 'updated-';
-          if (section === 'movies') {
-            params.type = 'movie';
-          }
-          if (section === 'series') {
-            params.type = 'serial';
+          params.sort = sort;
+          var sectionTypes = {
+            movies: 'movie',
+            series: 'serial',
+            documentaries: 'documovie',
+            docuseries: 'docuserial',
+            concerts: 'concert',
+            shows: 'tvshow',
+            stereo: '3D'
+          };
+          if (sectionTypes[section]) {
+            params.type = sectionTypes[section];
           }
           if (route.kp_genre) {
             params.genre = route.kp_genre;
@@ -2913,6 +3086,22 @@
             title: 'Фильтры',
             run: function () {
               catalogFilters(route);
+            }
+          });
+          actions.push({
+            title: sorts[sort],
+            run: function () {
+              menu(
+                'Сортировка KinoPub',
+                Object.keys(sorts).map(function (value) {
+                  return {
+                    title: (value === sort ? '✓ ' : '') + sorts[value],
+                    run: function () {
+                      pages.show(catalogRoute(route, { sort: value, page: 1 }));
+                    }
+                  };
+                })
+              );
             }
           });
         }
@@ -2933,22 +3122,6 @@
             total = Math.max(1, Math.ceil(items.length / 20));
             items = items.slice((page - 1) * 20, page * 20);
           }
-          function pagination(number, title) {
-            actions.push({
-              title: title,
-              run: function () {
-                pages.show(
-                  catalogRoute(route, { section: section, page: number })
-                );
-              }
-            });
-          }
-          if (page > 1) {
-            pagination(page - 1, '← Предыдущая страница');
-          }
-          if (page < total) {
-            pagination(page + 1, 'Следующая страница →');
-          }
           done(null, {
             isStale: function () {
               return (
@@ -2964,7 +3137,6 @@
                   ? json.folder.title
                   : names[section]),
             details: [
-              'Страница ' + page + ' из ' + total,
               !bookmarks && section !== 'search' && route.kp_genre_title,
               !bookmarks && section !== 'search' && route.kp_quality_title
             ]
@@ -2973,15 +3145,28 @@
             hint:
               section === 'folders'
                 ? 'Выбери папку закладок своего аккаунта KinoPub.'
-                : 'Долгое нажатие на карточку — закладки KinoPub. Озвучку выбирай в плеере.',
+                : 'Удерживай OK на карточке, чтобы добавить в закладки.',
             empty: bookmarks
               ? 'Пока пусто. Добавляй материалы долгим нажатием на карточку в каталоге.'
               : 'Ничего не найдено. Измени поиск или фильтры.',
-            layout: section === 'folders' ? 'folders' : 'posters',
+            layout: section === 'folders' ? 'folders' : 'catalog',
             actions: actions,
+            more:
+              page < total && items.length
+                ? function (callback) {
+                    var next = {};
+                    Object.keys(route).forEach(function (key) {
+                      next[key] = route[key];
+                    });
+                    next.kp_page = page + 1;
+                    next.kp_section = section;
+                    catalogRows(next, callback);
+                  }
+                : null,
             rows: items.map(function (item) {
               if (section === 'folders') {
                 return {
+                  key: 'folder:' + item.id,
                   title: item.title,
                   subtitle: 'Материалов: ' + (Number(item.count) || 0),
                   symbol: '★',
@@ -3003,17 +3188,39 @@
                 tvshow: 'ТВ-шоу',
                 '3D': '3D'
               };
+              var titles = String(item.title || '').split(' / ');
+              var quality = Number(item.quality);
+              var badges = [];
+              if (quality > 100) {
+                badges.push(quality === 2160 ? 'UHD 4K' : quality + 'p');
+              }
+              if (Number(item.ac3) > 0) {
+                badges.push('AC3');
+              }
+              var rating = Number(item.imdb_rating);
               return {
-                title: item.title,
+                key:
+                  item.id === undefined || item.id === null
+                    ? ''
+                    : 'item:' + item.id,
+                title: titles[0],
+                original: titles.slice(1).join(' / '),
+                badges: badges,
+                rating:
+                  rating > 0 && rating <= 10 ? 'IMDb ' + rating.toFixed(1) : '',
                 subtitle: [
                   item.year,
-                  types[item.type],
-                  Number(item.quality) > 100 ? item.quality + 'p' : ''
+                  (item.genres || [])
+                    .map(function (genre) {
+                      return genre.title;
+                    })
+                    .filter(Boolean)
+                    .join(', ') || types[item.type]
                 ]
                   .filter(Boolean)
                   .join(' · '),
                 poster: String(
-                  image.medium || image.big || image.small || ''
+                  image.big || image.medium || image.small || ''
                 ).replace(/^http:/, 'https:'),
                 next: { view: 'item', id: item.id },
                 menu: function () {

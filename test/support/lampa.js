@@ -103,7 +103,9 @@ function harness(options = {}) {
   if (options.native) {
     h.components = {};
     h.Lampa.Component = { add(name, component) { h.components[name] = component; } };
+    h.scrolls = [];
     h.Lampa.Scroll = function () {
+      h.scrolls.push(this);
       const node = h.$('scroll');
       this.append = child => node.append(child);
       this.render = () => node;

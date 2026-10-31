@@ -30,7 +30,8 @@ test('catalog has its own native menu entry, safe cards and native player; unsup
   assert.notEqual(h.menuButton.icon, h.component.icon, 'catalog uses the KinoPub mark; settings keep the Kinolamp logo');
   assert.equal(new URL(h.requests.at(-1).url).searchParams.get('sort'), 'created-');
   assert.equal(h.pageCards()[0].children[1].value, item.title);
-  assert.equal(h.pageCards()[0].children[2].value, '2026 · Фильм · 1080p');
+  assert.equal(h.pageCards()[0].children[2].value, '2026 · Фильм');
+  assert.ok(h.nodes.some(node => node.value === '1080p' && String(node.input).includes('kp-page__badge')));
   assert.ok(h.nodes.some(node => node.attributes?.src === 'https://cdn.example/poster.jpg'));
   const action = h.pageActions()[0]; action.handlers['hover:focus'](); assert.equal(h.scrollFocus, action);
   h.openCard(0); assert.equal(h.plays.length, 1); assert.equal(h.menus.length, 0);
@@ -52,9 +53,9 @@ test('catalog sections, filters and pagination preserve serializable query state
   assert.equal(new URL(h.requests.at(-1).url).searchParams.get('genre'), '10');
   h.pageAction('Фильтры'); h.select(1); h.select(1);
   assert.equal(new URL(h.requests.at(-1).url).searchParams.get('quality[]'), '3');
-  h.pageAction('Следующая страница →'); assert.equal(h.routes.at(-1).kp_page, 2);
+  h.scrolls.at(-1).onEnd(); assert.equal(new URL(h.requests.at(-1).url).searchParams.get('page'), '2');
   assert.equal(h.routes.at(-1).kp_genre_title, 'Драма'); assert.equal(h.routes.at(-1).kp_quality_title, '1080p');
-  h.pageAction('← Предыдущая страница'); assert.equal(h.routes.at(-1).kp_page, 1);
+  assert.equal(h.routes.at(-1).kp_page, 1);
   h.pageAction('Фильтры'); h.select(0); h.select(0); assert.equal(h.routes.at(-1).kp_genre, '');
   h.pageAction('Фильтры'); h.select(2); assert.equal(h.routes.at(-1).kp_quality, '');
   h.pageAction('Новинки'); assert.equal(h.routes.at(-1).kp_section, 'new');
@@ -69,7 +70,7 @@ test('independent search uses the native keyboard with cancellation, minimum len
   for (const value of [undefined, '', '  ', 'AB']) h.keyboard.done(value);
   assert.equal(h.routes.length, count); assert.match(h.notices.at(-1), /три символа/);
   h.keyboard.done('  Film <unsafe>  '); assert.equal(h.routes.at(-1).kp_query, item.title);
-  h.pageAction('Следующая страница →'); assert.equal(new URL(h.requests.at(-1).url).searchParams.get('q'), item.title);
+  h.scrolls.at(-1).onEnd(); assert.equal(new URL(h.requests.at(-1).url).searchParams.get('q'), item.title);
   h.pageAction('Поиск'); assert.equal(h.keyboard.params.value, item.title); h.keyboard.done('x'.repeat(150));
   assert.equal(h.routes.at(-1).kp_query.length, 100);
   h.pageAction('Поиск'); h.Lampa.Activity.backward(); const before = h.routes.length; h.keyboard.done('late'); assert.equal(h.routes.length, before);
@@ -86,7 +87,7 @@ test('bookmark folders and contents are account-backed with local pagination and
   h.openCard(0); assert.equal(h.plays.length, 1);
   for (const result of [{}, { items: [{}] }, { items: Array.from({ length: 21 }, (_, id) => ({ id: id + 1, title: 'Folder' })) }]) {
     const folders = catalog({ respond() { return result; } }); open(folders, { kp_section: 'folders' });
-    if (result.items?.length === 21) { assert.equal(folders.pageCards().length, 20); folders.pageAction('Следующая страница →'); assert.equal(folders.pageCards().length, 1); }
+    if (result.items?.length === 21) { assert.equal(folders.pageCards().length, 20); folders.scrolls.at(-1).onEnd(); assert.equal(folders.pageCards().length, 21); }
   }
   const unknown = catalog({ respond() { return { items: [{ id: 7 }] }; } }); open(unknown, { kp_section: 'folder', kp_folder: 1 });
   assert.equal(unknown.pageCards()[0].children[2].value, '');
@@ -193,4 +194,50 @@ test('cached background pages cannot steal focus or activate old controls when a
   assert.equal(logout.pageCards().length, 1); logout.action('logout'); logout.pages.at(-1).start();
   assert.equal(logout.pageCards().length, 0);
   assert.ok(logout.nodes.some(node => /Нужна авторизация/.test(node.value)));
+});
+
+test('KinoPub library sections use exact API types and reset previous filters', () => {
+  const types = ['documovie', 'docuserial', 'concert', 'tvshow', '3D'];
+  types.forEach((type, index) => {
+    const h = catalog(); open(h, { kp_genre: 10, kp_genre_title: 'Драма', kp_quality: 3, kp_query: 'old', kp_sort: 'rating-', kp_page: 2 });
+    h.pageAction('Разделы'); assert.equal(h.current.title, 'Библиотека KinoPub');
+    h.select(index + 3);
+    const query = new URL(h.requests.at(-1).url).searchParams;
+    assert.equal(query.get('type'), type); assert.equal(query.get('page'), '1');
+    assert.equal(query.has('genre'), false); assert.equal(query.has('quality[]'), false);
+    assert.equal(query.get('sort'), 'updated-'); assert.equal(h.routes.at(-1).kp_query, '');
+  });
+});
+
+test('catalog sorting and automatic loading preserve filters and selected order', () => {
+  const h = catalog(); open(h, { kp_genre: 10 });
+  const footer = h.nodes.find(n => String(n.input).includes('kp-page__pagination'));
+  assert.equal(footer.children.length, 0);
+  assert.equal(h.nodes.find(n => n.input === '<div class="kp-page__toolbar"></div>').children.some(n => /страница/.test(n.value)), false);
+  h.pageAction('По дате добавления'); h.select(2);
+  assert.equal(new URL(h.requests.at(-1).url).searchParams.get('sort'), 'rating-');
+  h.scrolls.at(-1).onEnd();
+  assert.equal(h.routes.at(-1).kp_sort, 'rating-'); assert.equal(h.routes.at(-1).kp_genre, 10);
+  assert.equal(new URL(h.requests.at(-1).url).searchParams.get('sort'), 'rating-');
+  open(h, { kp_sort: '__proto__' });
+  assert.equal(new URL(h.requests.at(-1).url).searchParams.get('sort'), 'created-');
+});
+
+test('catalog cards separate original title, badges, genres and genuine IMDb rating as safe text', () => {
+  const h = catalog({ respond() { return { items: [
+    { ...item, title: 'ВАЛЛ·И / WALL·E', ac3: 1, quality: 2160, imdb_rating: 8.4, genres: [{ title: 'Анимация' }, {}, { title: '<Комедия>' }], posters: { big: 'https://cdn.example/big.jpg', medium: 'https://cdn.example/medium.jpg' } },
+    { ...item, id: 8, title: '<Name> / <Original> / Part', ac3: '0', quality: 720, imdb_rating: 12 },
+    { imdb_rating: -1, quality: 0 }, { imdb_rating: 0 }
+  ], pagination: { total: 1 } }; } });
+  open(h);
+  const cards = h.pageCards();
+  assert.equal(cards[0].children[1].value, 'ВАЛЛ·И');
+  assert.equal(cards[0].children[2].value, '2026 · Анимация, <Комедия>');
+  assert.equal(cards[0].children[3].value, 'WALL·E');
+  const nodes = h.descendants(cards[0]);
+  assert.ok(nodes.some(n => n.attributes?.src === 'https://cdn.example/big.jpg'));
+  for (const label of ['UHD 4K', 'AC3', 'IMDb 8.4']) assert.ok(nodes.some(n => n.value === label));
+  assert.equal(cards[1].children[3].value, '<Original> / Part');
+  assert.equal(h.descendants(cards[1]).filter(n => n.value === 'AC3').length, 0);
+  assert.equal(h.descendants(cards[1]).filter(n => String(n.input).includes('kp-page__rating')).length, 0);
 });

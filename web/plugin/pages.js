@@ -14,6 +14,11 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     var focusedElement = false;
     var captions = [];
     var isStale = null;
+    var more = null;
+    var loadingMore = false;
+    var moreFailed = false;
+    var moreRequest = 0;
+    var seen = Object.create(null);
     var view = $('<div class="kp-page"></div>');
     var head = $('<div class="kp-page__head"></div>');
     var title = $('<div class="kp-page__title"></div>').text('KinoPub');
@@ -22,6 +27,9 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     );
     var grid = $('<div class="kp-page__grid"></div>');
     var toolbar = $('<div class="kp-page__toolbar"></div>');
+    var pagination = $(
+      '<div class="kp-page__toolbar kp-page__pagination"></div>'
+    );
     var details = $('<div class="kp-page__details"></div>');
     var description = $('<div class="kp-page__description"></div>');
     var scroll = new Lampa.Scroll({ mask: true, over: true });
@@ -30,9 +38,173 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     scroll.append(details);
     scroll.append(description);
     scroll.append(grid);
+    scroll.append(pagination);
     view.append(head).append(status).append(scroll.render());
+    function buttons(actions, target) {
+      actions.forEach(function (action) {
+        var button = $(
+          '<div class="simple-button selector kp-page__action"></div>'
+        ).text(action.title);
+        button.on('hover:focus', function () {
+          focusedElement = button[0];
+          scroll.update(button, true);
+        });
+        button.on('hover:enter', function () {
+          if (isAlive && !isSuspended) {
+            action.run();
+          }
+        });
+        (target || toolbar).append(button);
+        if (!focusedElement) {
+          focusedElement = button[0];
+        }
+      });
+    }
+    function updateCaptions() {
+      captions.forEach(function (label) {
+        label.node.text(
+          typeof label.row.subtitle === 'function'
+            ? label.row.subtitle()
+            : label.row.subtitle
+        );
+      });
+    }
+    function appendRows(rows) {
+      var count = captions.length;
+      rows.forEach(function (row) {
+        if (row.key && seen[row.key]) {
+          return;
+        }
+        if (row.key) {
+          seen[row.key] = true;
+        }
+        var position = captions.length;
+        var card = $('<div class="kp-page__card selector"></div>');
+        var poster = $('<div class="kp-page__poster"></div>');
+        poster.append(
+          $('<span class="kp-page__placeholder"></span>').text(
+            row.symbol || '▶'
+          )
+        );
+        if (httpsURL(row.poster)) {
+          poster.append(
+            $('<img loading="lazy" alt="">')
+              .attr('src', row.poster)
+              .on('error', function () {
+                $(this).remove();
+              })
+          );
+        }
+        card
+          .append(poster)
+          .append(
+            $('<div class="kp-page__name card__title"></div>').text(row.title)
+          );
+        var meta = $('<div class="kp-page__meta"></div>');
+        card.append(meta);
+        if (row.original) {
+          card.append(
+            $('<div class="kp-page__original"></div>').text(row.original)
+          );
+        }
+        var badges = $('<div class="kp-page__badges"></div>');
+        (row.badges || []).forEach(function (label) {
+          badges.append($('<span class="kp-page__badge"></span>').text(label));
+        });
+        poster.append(badges);
+        if (row.rating) {
+          poster.append(
+            $('<span class="kp-page__rating"></span>').text(row.rating)
+          );
+        }
+        captions.push({ node: meta, row: row });
+        if (!focusedElement) {
+          focusedElement = card[0];
+        }
+        card.on('hover:focus', function () {
+          focusedElement = card[0];
+          scroll.update(card, true);
+          if (position >= captions.length - 5) {
+            loadMore();
+          }
+        });
+        card.on('hover:enter', function () {
+          if (isAlive && !isSuspended) {
+            activate(row);
+          }
+        });
+        if (row.menu) {
+          card.on('hover:long', function () {
+            if (isAlive && !isSuspended) {
+              row.menu();
+            }
+          });
+        }
+        grid.append(card);
+      });
+      updateCaptions();
+      return captions.length - count;
+    }
+    function loadMore() {
+      if (!isAlive || isSuspended || loadingMore || moreFailed || !more) {
+        return;
+      }
+      var expected = ++moreRequest;
+      loadingMore = true;
+      pagination
+        .empty()
+        .append(
+          $('<div class="kp-page__loading" role="status"></div>').text(
+            'Загрузка…'
+          )
+        );
+      more(function (error, data) {
+        if (!isAlive || isSuspended || expected !== moreRequest) {
+          return;
+        }
+        loadingMore = false;
+        pagination.empty();
+        if (isStale && isStale()) {
+          more = null;
+          return;
+        }
+        if (error) {
+          moreFailed = true;
+          var beforeRetry = focusedElement;
+          pagination.append(
+            $('<div class="kp-page__loading" role="status"></div>').text(
+              'Не удалось загрузить следующие карточки.'
+            )
+          );
+          buttons(
+            [
+              {
+                title: 'Повторить',
+                run: function () {
+                  moreFailed = false;
+                  focusedElement = beforeRetry;
+                  loadMore();
+                }
+              }
+            ],
+            pagination
+          );
+        } else {
+          var added = appendRows(data.rows);
+          more = added ? data.more || null : null;
+        }
+        Lampa.Controller.collectionSet(view);
+        Lampa.Controller.collectionFocus(focusedElement, view);
+      });
+    }
+    scroll.onEnd = loadMore;
     this.create = function () {
       var expected = ++requestId;
+      moreRequest++;
+      more = null;
+      loadingMore = false;
+      moreFailed = false;
+      seen = Object.create(null);
       status.text('Загрузка…');
       self.activity.loader(true);
       load(object, function (error, data) {
@@ -42,29 +214,10 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
         self.activity.loader(false);
         grid.empty();
         toolbar.empty();
+        pagination.empty();
         focusedElement = false;
         captions = [];
         isStale = null;
-        function buttons(actions) {
-          actions.forEach(function (action) {
-            var button = $(
-              '<div class="simple-button selector kp-page__action"></div>'
-            ).text(action.title);
-            button.on('hover:focus', function () {
-              focusedElement = button[0];
-              scroll.update(button, true);
-            });
-            button.on('hover:enter', function () {
-              if (isAlive && !isSuspended) {
-                action.run();
-              }
-            });
-            toolbar.append(button);
-            if (!focusedElement) {
-              focusedElement = button[0];
-            }
-          });
-        }
         if (error) {
           title.text('KinoPub');
           details.text('');
@@ -84,50 +237,8 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
               : data.empty ||
                   'Ничего не найдено. Вернись назад и выбери другой материал.'
           );
-          data.rows.forEach(function (row) {
-            var card = $('<div class="kp-page__card selector"></div>');
-            var poster = $('<div class="kp-page__poster"></div>');
-            poster.append(
-              $('<span class="kp-page__placeholder"></span>').text(
-                row.symbol || '▶'
-              )
-            );
-            if (httpsURL(row.poster)) {
-              poster.append(
-                $('<img loading="lazy" alt="">')
-                  .attr('src', row.poster)
-                  .on('error', function () {
-                    $(this).remove();
-                  })
-              );
-            }
-            card
-              .append(poster)
-              .append($('<div class="kp-page__name"></div>').text(row.title));
-            var meta = $('<div class="kp-page__meta"></div>');
-            card.append(meta);
-            captions.push({ node: meta, row: row });
-            if (!focusedElement) {
-              focusedElement = card[0];
-            }
-            card.on('hover:focus', function () {
-              focusedElement = card[0];
-              scroll.update(card, true);
-            });
-            card.on('hover:enter', function () {
-              if (isAlive && !isSuspended) {
-                activate(row);
-              }
-            });
-            if (row.menu) {
-              card.on('hover:long', function () {
-                if (isAlive && !isSuspended) {
-                  row.menu();
-                }
-              });
-            }
-            grid.append(card);
-          });
+          appendRows(data.rows);
+          more = data.rows.length ? data.more || null : null;
         }
         if (!isSuspended) {
           self.activity.toggle();
@@ -144,13 +255,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
         self.create();
         return;
       }
-      captions.forEach(function (label) {
-        label.node.text(
-          typeof label.row.subtitle === 'function'
-            ? label.row.subtitle()
-            : label.row.subtitle
-        );
-      });
+      updateCaptions();
       Lampa.Controller.add('content', {
         toggle: function () {
           Lampa.Controller.collectionSet(view);
@@ -187,6 +292,11 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
     };
     this.pause = function () {
       isSuspended = true;
+      moreRequest++;
+      if (loadingMore) {
+        loadingMore = false;
+        pagination.empty();
+      }
       if (active === self) {
         active = null;
       }
@@ -217,6 +327,7 @@ export function createNativePages(Lampa, $, navigation, load, activate) {
         kp_genre_title: route.genreTitle,
         kp_quality: route.quality,
         kp_quality_title: route.qualityTitle,
+        kp_sort: route.sort,
         kp_folder: route.folder
       });
     },
