@@ -25,6 +25,9 @@ function long(h) { h.pageCards()[0].handlers['hover:long'](); }
 test('catalog has its own native menu entry, safe cards and native player; unsupported builds and login are clear', () => {
   const h = catalog(); h.menuButton.run();
   assert.equal(h.menuButton.title, 'KinoPub'); assert.equal(h.routes[0].kp_section, 'new');
+  assert.match(h.menuButton.icon, /fill="currentColor"/);
+  assert.match(h.menuButton.icon, /viewBox="0 0 128 128"/);
+  assert.notEqual(h.menuButton.icon, h.component.icon, 'catalog uses the KinoPub mark; settings keep the Kinolamp logo');
   assert.equal(new URL(h.requests.at(-1).url).searchParams.get('sort'), 'created-');
   assert.equal(h.pageCards()[0].children[1].value, item.title);
   assert.equal(h.pageCards()[0].children[2].value, '2026 · Фильм · 1080p');

@@ -13,7 +13,7 @@ import { installSettings } from './settings.js';
 import { installWatch } from './watch.js';
 import { installPlayerFeedback } from './player-feedback.js';
 import { installAudioLabels } from './audio-labels.js';
-import icon from '../static/icon.svg';
+import catalogIcon from './kinopub.svg';
 function nameExtension(Lampa, root) {
   var script = root.document && root.document.currentScript;
   if (
@@ -107,7 +107,7 @@ export function install(Lampa, $, root) {
         return;
       }
       catalogMenuAdded = true;
-      Lampa.Menu.addButton(icon, 'KinoPub', catalog.open).attr(
+      Lampa.Menu.addButton(catalogIcon, 'KinoPub', catalog.open).attr(
         'data-action',
         'kinolamp'
       );

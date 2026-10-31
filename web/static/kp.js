@@ -1,4 +1,4 @@
-/* Kinolamp 0.3.11 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
+/* Kinolamp 0.3.12 — MIT. Generated from web/plugin/index.js; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.3.11';
+    var VERSION = '0.3.12';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -3398,6 +3398,9 @@
       Lampa.PlayerVideo.listener.follow('webos_tracks', update);
     }
 
+    var catalogIcon =
+      '<!-- KinoPub mark from https://m.staticpop.net/logo.svg, linked by https://kino.watch/user/login. Colour inherits the Lampa menu theme. -->\n<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">\n  <g transform="translate(-4.436480,132.430785) scale(0.106804,-0.106965)" fill="currentColor">\n        <path d="M492 1220 c-109 -29 -187 -74 -272 -160 -87 -86 -131 -163 -160 -276\n-50 -193 3 -400 139 -547 30 -32 74 -72 98 -88 l43 -30 0 296 0 296 29 57 c57\n111 153 172 271 172 119 0 217 -63 274 -177 38 -76 37 -172 -3 -251 -57 -112\n-153 -172 -273 -172 -44 1 -83 6 -98 15 -14 8 -30 14 -36 15 -11 0 -154 -233\n-154 -250 0 -12 91 -48 162 -65 130 -31 285 -9 411 57 81 42 203 164 245 245\n42 80 72 198 72 283 0 85 -30 203 -72 283 -42 81 -164 203 -245 245 -132 69\n-291 88 -431 52z"/>\n    <path d="M585 695 c-16 -15 -25 -36 -25 -55 0 -19 9 -40 25 -55 49 -50 135\n-15 135 55 0 19 -9 40 -25 55 -15 16 -36 25 -55 25 -19 0 -40 -9 -55 -25z"/>\n  </g>\n</svg>\n';
+
     function nameExtension(Lampa, root) {
       var script = root.document && root.document.currentScript;
       if (
@@ -3495,7 +3498,7 @@
             return;
           }
           catalogMenuAdded = true;
-          Lampa.Menu.addButton(icon, 'KinoPub', catalog.open).attr(
+          Lampa.Menu.addButton(catalogIcon, 'KinoPub', catalog.open).attr(
             'data-action',
             'kinolamp'
           );
