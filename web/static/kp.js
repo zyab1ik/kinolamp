@@ -1,4 +1,4 @@
-/* Kinolamp 0.4.0 — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */
+/* Kinolamp 0.4.1 — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.4.0';
+    var VERSION = '0.4.1';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -3454,8 +3454,7 @@
       });
     }
 
-    // Keep Lampa's player and recovery logic intact; translate only known nonfatal
-    // HLS messages for Kinolamp playback. Never render arbitrary upstream text.
+    // Own only the status text for Kinolamp. Lampa keeps playback and HLS recovery.
     function installPlayerFeedback(Lampa) {
       if (
         !Lampa.Player.listener ||
@@ -3467,35 +3466,115 @@
         return;
       }
       var owned = false;
-      var messages = {
-        bufferFullError:
-          'Буфер плеера переполнен. Если видео зависло, перезапусти воспроизведение или смени плеер в настройках Lampa.',
-        bufferStalledError: 'Буферизация: плеер ожидает продолжения видео.',
-        fragLoadError:
-          'Не удалось загрузить фрагмент видео. Плеер повторяет попытку.',
-        fragLoadTimeOut:
-          'Фрагмент видео загружается слишком долго. Плеер повторяет попытку.'
-      };
+      var session = 0;
+      var waiting = false;
+      var longWait = false;
+      var position = null;
+      var warningTimer;
+      var writeTimer;
+      var recoverable = [
+        'bufferFullError',
+        'bufferStalledError',
+        'fragLoadError',
+        'fragLoadTimeOut'
+      ];
+      function cancel() {
+        clearTimeout(warningTimer);
+        clearTimeout(writeTimer);
+        waiting = false;
+        longWait = false;
+      }
+      function write(message) {
+        clearTimeout(writeTimer);
+        var expected = session;
+        // PlayerInfo may subscribe after us and write raw HLS text synchronously.
+        // Defer our text until all native handlers have finished without editing
+        // the event that diagnostics and the recovery engine still need.
+        writeTimer = setTimeout(function () {
+          if (owned && session === expected) {
+            Lampa.PlayerInfo.set('error', message);
+          }
+        }, 0);
+      }
+      function showWaiting() {
+        if (!owned) {
+          return;
+        }
+        if (!waiting) {
+          waiting = true;
+          var expected = session;
+          warningTimer = setTimeout(function () {
+            if (owned && waiting && session === expected) {
+              longWait = true;
+              write(
+                'Видео не загружается. Попробуйте повторить воспроизведение.'
+              );
+            }
+          }, 15000);
+        }
+        write(
+          longWait
+            ? 'Видео не загружается. Попробуйте повторить воспроизведение.'
+            : 'Загрузка видео…'
+        );
+      }
+      function resumed() {
+        if (owned && waiting) {
+          cancel();
+          write('');
+        }
+      }
       Lampa.Player.listener.follow('start', function (work) {
+        cancel();
+        session++;
+        position = null;
         owned = !!(work && work._kinolampDiagnostic);
       });
       Lampa.Player.listener.follow('destroy', function () {
+        cancel();
+        session++;
+        position = null;
         owned = false;
       });
-      Lampa.PlayerVideo.listener.follow('error', function (event) {
+      Lampa.PlayerVideo.listener.follow('waiting', showWaiting);
+      Lampa.PlayerVideo.listener.follow('stalled', showWaiting);
+      Lampa.PlayerVideo.listener.follow('playing', resumed);
+      Lampa.PlayerVideo.listener.follow('pause', resumed);
+      Lampa.PlayerVideo.listener.follow('ended', resumed);
+      Lampa.PlayerVideo.listener.follow('timeupdate', function (event) {
         if (
           !owned ||
           !event ||
-          event.fatal !== false ||
-          typeof event.error !== 'string'
+          typeof event.current !== 'number' ||
+          !isFinite(event.current) ||
+          event.current < 0
         ) {
+          return;
+        }
+        // Some native TV players report progress but omit a resumed/playing event.
+        // A repeated timestamp is not evidence that playback has recovered.
+        if (position !== null && event.current > position) {
+          resumed();
+        }
+        position = event.current;
+      });
+      Lampa.PlayerVideo.listener.follow('error', function (event) {
+        if (!owned || !event) {
+          return;
+        }
+        if (event.fatal === true) {
+          // A delayed buffering message must not overwrite a native fatal error.
+          cancel();
+          return;
+        }
+        if (event.fatal !== false || typeof event.error !== 'string') {
           return;
         }
         var match = event.error.match(
           /^details \[([a-zA-Z]+)\] fatal \[false\]$/
         );
-        if (match && Object.prototype.hasOwnProperty.call(messages, match[1])) {
-          Lampa.PlayerInfo.set('error', messages[match[1]]);
+        if (match && recoverable.indexOf(match[1]) !== -1) {
+          showWaiting();
         }
       });
     }
