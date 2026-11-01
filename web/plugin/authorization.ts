@@ -4,12 +4,14 @@ interface LoginState {
   timer: number | null;
   generation: number;
 }
-import { VERSION } from './config.js';
+import { deviceInfo } from './device-info.js';
+import type { Root } from './contracts.js';
 export function createAuthorization(
   Lampa: Lampa,
   $: JQuery,
   client: Client,
-  ui: Ui
+  ui: Ui,
+  root: Root
 ) {
   var notify = ui.notify;
   var restore = ui.restore;
@@ -19,16 +21,8 @@ export function createAuthorization(
     if (!client.hasToken()) {
       return;
     }
-    var platform =
-      Lampa.Platform && typeof Lampa.Platform.get === 'function'
-        ? Lampa.Platform.get()
-        : '';
     client.notifyDevice(
-      {
-        title: 'Kinolamp / Lampa',
-        hardware: String(platform || 'Lampa'),
-        software: 'Kinolamp ' + VERSION
-      },
+      deviceInfo(Lampa, root, client.get('device_name')),
       function () {}
     );
   }
@@ -173,5 +167,10 @@ export function createAuthorization(
     Lampa.Settings.update();
     notify('Локальная сессия удалена. Отзыв устройства доступен на kino.pub.');
   }
-  return { login: login, logout: logout, authorized: authorized };
+  return {
+    login: login,
+    logout: logout,
+    authorized: authorized,
+    updateDevice: updateDevice
+  };
 }

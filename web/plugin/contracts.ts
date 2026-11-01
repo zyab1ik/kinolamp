@@ -137,6 +137,7 @@ export interface Settings {
   proxy_enabled: string | boolean;
   proxy_url: string;
   proxy_token: string;
+  device_name: string;
 }
 export interface ProgressRecord {
   time: number;
@@ -526,6 +527,7 @@ export type SettingAction = (
   advanced?: string | boolean
 ) => void;
 export interface Root {
+  navigator?: { userAgent: string };
   document?: Document;
   XMLHttpRequest?: typeof XMLHttpRequest;
   Navigator?: Navigator;

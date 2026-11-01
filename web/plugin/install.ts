@@ -54,7 +54,7 @@ export function install(Lampa: Lampa, $: JQuery, root: Root) {
   var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
   var transport = createTransport(Lampa, diagnostics);
   var client = createClient(Lampa.Storage, transport);
-  var authorization = createAuthorization(Lampa, $, client, ui);
+  var authorization = createAuthorization(Lampa, $, client, ui, root);
   var playerDiagnostics = createPlayerDiagnostics(
     Lampa,
     $,

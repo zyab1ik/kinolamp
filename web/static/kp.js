@@ -1,4 +1,4 @@
-/* Kinolamp 0.4.1 — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */
+/* Kinolamp 0.4.2 — MIT. Generated from web/plugin/index.ts; edit sources and run make build-plugin. */
 (function (root, factory) {
   'use strict';
   var plugin = factory();
@@ -13,7 +13,7 @@
   var plugin = (function () {
     'use strict';
 
-    var VERSION = '0.4.1';
+    var VERSION = '0.4.2';
     var API = 'https://api.service-kp.com';
     var PREFIX = 'kp_self_';
     // Shared xbmc client distributed by open-source KinoPub clients; not an account token.
@@ -525,7 +525,59 @@
       };
     }
 
-    function createAuthorization(Lampa, $, client, ui) {
+    // Read only descriptive fields. Never send the complete user agent or device IDs.
+    function deviceInfo(Lampa, root, customName) {
+      var platform =
+        Lampa.Platform && typeof Lampa.Platform.get === 'function'
+          ? Lampa.Platform.get()
+          : '';
+      var agent = root.navigator ? root.navigator.userAgent : '';
+      var system = /(Tizen|Android|webOS|Web0S)[ /]([\d.]+)/i.exec(agent);
+      var labels = {
+        tizen: 'Samsung TV',
+        webos: 'LG TV',
+        philips: 'Philips TV',
+        android: 'Android',
+        androidtv: 'Android TV',
+        browser: 'Браузер'
+      };
+      var label = labels[platform];
+      var hardware = typeof label === 'string' ? label : platform || 'Lampa';
+      var operatingSystem = '';
+      if (system) {
+        var name = system[1].toLowerCase();
+        operatingSystem =
+          (name === 'web0s' || name === 'webos'
+            ? 'webOS'
+            : name === 'tizen'
+              ? 'Tizen'
+              : 'Android') +
+          ' ' +
+          system[2];
+        if (!platform || platform === 'browser') {
+          hardware = operatingSystem.split(' ')[0];
+        }
+      }
+      // Android's standard UA exposes the model immediately before "Build/".
+      // Other devices keep their platform name rather than guessing a model.
+      var model = /Android[^)]*;\s*([^;()]+?)\s+Build\//i.exec(agent);
+      if (model) {
+        hardware += ' · ' + model[1].trim().slice(0, 80);
+      }
+      // eslint-disable-next-line no-control-regex -- Device names must not contain control characters.
+      var controls = /[\x00-\x1f\x7f]/g;
+      var title = customName.replace(controls, '').trim().slice(0, 80);
+      return {
+        title: title || hardware + ' · Kinolamp',
+        hardware: hardware,
+        software:
+          'Kinolamp ' +
+          VERSION +
+          (operatingSystem ? ' · ' + operatingSystem : '')
+      };
+    }
+
+    function createAuthorization(Lampa, $, client, ui, root) {
       var notify = ui.notify;
       var restore = ui.restore;
       var errorMessage = ui.errorMessage;
@@ -534,16 +586,8 @@
         if (!client.hasToken()) {
           return;
         }
-        var platform =
-          Lampa.Platform && typeof Lampa.Platform.get === 'function'
-            ? Lampa.Platform.get()
-            : '';
         client.notifyDevice(
-          {
-            title: 'Kinolamp / Lampa',
-            hardware: String(platform || 'Lampa'),
-            software: 'Kinolamp ' + VERSION
-          },
+          deviceInfo(Lampa, root, client.get('device_name')),
           function () {}
         );
       }
@@ -690,7 +734,12 @@
           'Локальная сессия удалена. Отзыв устройства доступен на kino.pub.'
         );
       }
-      return { login: login, logout: logout, authorized: authorized };
+      return {
+        login: login,
+        logout: logout,
+        authorized: authorized,
+        updateDevice: updateDevice
+      };
     }
 
     function createPlayerDiagnostics(
@@ -3277,6 +3326,9 @@
           },
           field: { name: name, description: description },
           onChange: function () {
+            if (key === 'device_name') {
+              authorization.updateDevice();
+            }
             if (key === 'diagnostics_enabled') {
               playerDiagnostics.clear();
             }
@@ -3284,7 +3336,7 @@
           },
           onRender: function (item) {
             if (
-              type === 'input' &&
+              (key === 'proxy_url' || key === 'proxy_token') &&
               client.get('proxy_enabled') !== true &&
               client.get('proxy_enabled') !== 'true'
             ) {
@@ -3362,6 +3414,15 @@
           }
         });
       });
+      setting(
+        'device_name',
+        'input',
+        'Название устройства в KinoPub',
+        'Например, «Телевизор в гостиной». Пустое поле — определить автоматически. Название, платформа и доступные сведения о модели и ОС отправляются в KinoPub.',
+        '',
+        '',
+        true
+      );
       action('catalog', 'Открыть каталог KinoPub', catalog.open, true);
       playerDiagnostics.registerSettings(setting, action);
       action('privacy', 'О плагине и приватности', function () {
@@ -3722,7 +3783,7 @@
       var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
       var transport = createTransport(Lampa, diagnostics);
       var client = createClient(Lampa.Storage, transport);
-      var authorization = createAuthorization(Lampa, $, client, ui);
+      var authorization = createAuthorization(Lampa, $, client, ui, root);
       var playerDiagnostics = createPlayerDiagnostics(
         Lampa,
         $,

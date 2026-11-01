@@ -276,7 +276,7 @@ test('extension metadata names only its own unnamed entry and preserves custom n
 test('empty input settings provide a real Lampa placeholder without storing it as credentials', () => {
   const h = harness({ storage: { kp_self_client_id: '', kp_self_client_secret: '' } });
   const inputs = h.settings.filter(entry => entry.param.type === 'input');
-  assert.equal(inputs.length, 2);
+  assert.equal(inputs.length, 3);
   for (const entry of inputs) {
     // Lampa interpolates param.placeholder into the DOM, then uses it for an empty value.
     const placeholder = String(entry.param.placeholder);
@@ -361,8 +361,8 @@ test('device metadata updates the existing session on startup and after login wi
     assert.equal(req.headers.Authorization, 'Bearer test-access');
     assert.equal(req.headers['Content-Type'], 'application/x-www-form-urlencoded');
     const info = new URLSearchParams(req.body);
-    assert.equal(info.get('title'), 'Kinolamp / Lampa');
-    assert.equal(info.get('hardware'), options.platform || 'Lampa');
+    assert.equal(info.get('title'), ({ tizen: 'Samsung TV', webos: 'LG TV', browser: 'Браузер' }[options.platform] || 'Lampa') + ' · Kinolamp');
+    assert.equal(info.get('hardware'), ({ tizen: 'Samsung TV', webos: 'LG TV', browser: 'Браузер' }[options.platform] || 'Lampa'));
     assert.equal(info.get('software'), 'Kinolamp ' + fs.readFileSync(path.resolve(__dirname, '../VERSION'), 'utf8').trim());
     assert.equal(info.size, 3);
     assert.equal(h.requests.length, 0);
@@ -395,4 +395,49 @@ test('device metadata POST refreshes authentication without moving the payload i
     assert.equal(req.url.includes('?'), false);
   }
   assert.equal(posts[1].headers.Authorization, 'Bearer refreshed');
+});
+
+
+test('device metadata uses available model and OS without sending the full user agent', () => {
+  const cases = [
+    ['tizen', 'Mozilla/5.0 (SMART-TV; Tizen 7.0) private-marker', 'Samsung TV', 'Tizen 7.0'],
+    ['webos', 'Mozilla/5.0 (webOS/6.0)', 'LG TV', 'webOS 6.0'],
+    ['philips', 'Mozilla/5.0 (Android 11; TPM211EA Build/RTT0)', 'Philips TV · TPM211EA', 'Android 11'],
+    ['browser', 'Mozilla/5.0 (Android 12; Pixel 6 Build/SQ1)', 'Android · Pixel 6', 'Android 12'],
+    ['', 'Web0S/4.0', 'webOS', 'webOS 4.0'],
+    ['', 'Tizen 5.5', 'Tizen', 'Tizen 5.5'],
+    ['android', '', 'Android', ''],
+    ['androidtv', '', 'Android TV', ''],
+    ['custom-platform', '', 'custom-platform', ''],
+    ['constructor', '', 'constructor', '']
+  ];
+  const version = fs.readFileSync(path.resolve(__dirname, '../VERSION'), 'utf8').trim();
+  for (const [platform, userAgent, hardware, system] of cases) {
+    const h = harness({ platform, root: { navigator: { userAgent } } });
+    const info = new URLSearchParams(h.deviceRequests[0].body);
+    assert.equal(info.get('hardware'), hardware);
+    assert.equal(info.get('title'), hardware + ' · Kinolamp');
+    assert.equal(info.get('software'), 'Kinolamp ' + version + (system ? ' · ' + system : ''));
+    assert.equal(info.size, 3);
+    assert.equal(h.deviceRequests[0].body.includes('private-marker'), false);
+  }
+});
+
+test('custom device names are visible without a proxy and update the current device immediately', () => {
+  const h = harness({ storage: { kp_self_device_name: '  Телевизор в гостиной\n ' } });
+  assert.equal(new URLSearchParams(h.deviceRequests[0].body).get('title'), 'Телевизор в гостиной');
+  const setting = h.settings.find(entry => entry.param.name === 'kp_self_device_name');
+  assert.equal(setting.component, 'kp_self_advanced');
+  const node = h.$('device-name');
+  setting.onRender(node);
+  assert.equal(node.hidden, undefined);
+  h.storage.set('kp_self_device_name', 'A'.repeat(100));
+  setting.onChange();
+  assert.equal(new URLSearchParams(h.deviceRequests[1].body).get('title'), 'A'.repeat(80));
+  h.storage.set('kp_self_device_name', '   ');
+  setting.onChange();
+  assert.equal(new URLSearchParams(h.deviceRequests[2].body).get('title'), 'Lampa · Kinolamp');
+  h.storage.set('kp_self_access', '');
+  setting.onChange();
+  assert.equal(h.deviceRequests.length, 3);
 });

@@ -53,6 +53,9 @@ export function installSettings(
       },
       field: { name: name, description: description },
       onChange: function () {
+        if (key === 'device_name') {
+          authorization.updateDevice();
+        }
         if (key === 'diagnostics_enabled') {
           playerDiagnostics.clear();
         }
@@ -60,7 +63,7 @@ export function installSettings(
       },
       onRender: function (item) {
         if (
-          type === 'input' &&
+          (key === 'proxy_url' || key === 'proxy_token') &&
           client.get('proxy_enabled') !== true &&
           client.get('proxy_enabled') !== 'true'
         ) {
@@ -143,6 +146,15 @@ export function installSettings(
       }
     });
   });
+  setting(
+    'device_name',
+    'input',
+    'Название устройства в KinoPub',
+    'Например, «Телевизор в гостиной». Пустое поле — определить автоматически. Название, платформа и доступные сведения о модели и ОС отправляются в KinoPub.',
+    '',
+    '',
+    true
+  );
   action('catalog', 'Открыть каталог KinoPub', catalog.open, true);
 
   playerDiagnostics.registerSettings(setting, action);
