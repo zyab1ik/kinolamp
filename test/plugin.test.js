@@ -361,8 +361,8 @@ test('device metadata updates the existing session on startup and after login wi
     assert.equal(req.headers.Authorization, 'Bearer test-access');
     assert.equal(req.headers['Content-Type'], 'application/x-www-form-urlencoded');
     const info = new URLSearchParams(req.body);
-    assert.equal(info.get('title'), ({ tizen: 'Samsung TV', webos: 'LG TV', browser: 'Браузер' }[options.platform] || 'Lampa') + ' · Kinolamp');
-    assert.equal(info.get('hardware'), ({ tizen: 'Samsung TV', webos: 'LG TV', browser: 'Браузер' }[options.platform] || 'Lampa'));
+    assert.equal(info.get('title'), options.platform ? options.platform + ' · Kinolamp' : 'Устройство с Lampa');
+    assert.equal(info.get('hardware'), options.platform || 'Устройство с Lampa');
     assert.equal(info.get('software'), 'Kinolamp ' + fs.readFileSync(path.resolve(__dirname, '../VERSION'), 'utf8').trim());
     assert.equal(info.size, 3);
     assert.equal(h.requests.length, 0);
@@ -400,14 +400,14 @@ test('device metadata POST refreshes authentication without moving the payload i
 
 test('device metadata uses available model and OS without sending the full user agent', () => {
   const cases = [
-    ['tizen', 'Mozilla/5.0 (SMART-TV; Tizen 7.0) private-marker', 'Samsung TV', 'Tizen 7.0'],
-    ['webos', 'Mozilla/5.0 (webOS/6.0)', 'LG TV', 'webOS 6.0'],
-    ['philips', 'Mozilla/5.0 (Android 11; TPM211EA Build/RTT0)', 'Philips TV · TPM211EA', 'Android 11'],
-    ['browser', 'Mozilla/5.0 (Android 12; Pixel 6 Build/SQ1)', 'Android · Pixel 6', 'Android 12'],
+    ['tizen', 'Mozilla/5.0 (SMART-TV; Tizen 7.0) private-marker', 'Tizen', 'Tizen 7.0'],
+    ['webos', 'Mozilla/5.0 (webOS/6.0)', 'webOS', 'webOS 6.0'],
+    ['philips', 'Mozilla/5.0 (Android 11; TPM211EA Build/RTT0)', 'TPM211EA', 'Android 11'],
+    ['browser', 'Mozilla/5.0 (Android 12; Pixel 6 Build/SQ1)', 'Pixel 6', 'Android 12'],
     ['', 'Web0S/4.0', 'webOS', 'webOS 4.0'],
     ['', 'Tizen 5.5', 'Tizen', 'Tizen 5.5'],
-    ['android', '', 'Android', ''],
-    ['androidtv', '', 'Android TV', ''],
+    ['android', '', 'android', ''],
+    ['androidtv', '', 'androidtv', ''],
     ['custom-platform', '', 'custom-platform', ''],
     ['constructor', '', 'constructor', '']
   ];
@@ -436,8 +436,38 @@ test('custom device names are visible without a proxy and update the current dev
   assert.equal(new URLSearchParams(h.deviceRequests[1].body).get('title'), 'A'.repeat(80));
   h.storage.set('kp_self_device_name', '   ');
   setting.onChange();
-  assert.equal(new URLSearchParams(h.deviceRequests[2].body).get('title'), 'Lampa · Kinolamp');
+  assert.equal(new URLSearchParams(h.deviceRequests[2].body).get('title'), 'Устройство с Lampa');
   h.storage.set('kp_self_access', '');
   setting.onChange();
   assert.equal(h.deviceRequests.length, 3);
+});
+
+
+test('device descriptions prefer available information on computers, phones and unknown platforms', () => {
+  const cases = [
+    [{ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }, 'Windows NT', 'Windows NT 10.0'],
+    [{ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1)' }, 'macOS', 'macOS 14.6.1'],
+    [{ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X)' }, 'iPhone', 'iOS 17.6'],
+    [{ userAgent: 'Mozilla/5.0 (iPad; CPU OS 16_7 like Mac OS X)' }, 'iPad', 'iOS 16.7'],
+    [{ userAgent: 'iPod' }, 'iPod', ''],
+    [{ userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 15917.71.0)' }, 'Chrome OS', 'Chrome OS 15917.71.0'],
+    [{ userAgent: 'Mozilla/5.0 (X11; Linux x86_64)' }, 'Linux', 'Linux'],
+    [{ userAgent: '', userAgentData: { platform: 'Future OS' }, platform: 'ignored' }, 'Future OS', 'Future OS'],
+    [{ userAgent: '', userAgentData: { platform: '' }, platform: 'FreeBSD amd64' }, 'FreeBSD amd64', 'FreeBSD amd64'],
+    [{ userAgent: '', platform: ' Win32 ' }, 'Win32', 'Win32'],
+    [{ userAgent: 'unknown-agent', platform: '' }, 'roku', ''],
+    [{ userAgent: 'unknown-agent' }, 'roku', '']
+  ];
+  const version = fs.readFileSync(path.resolve(__dirname, '../VERSION'), 'utf8').trim();
+  for (const [navigator, description, software] of cases) {
+    const h = harness({ platform: 'roku', root: { navigator } });
+    const data = new URLSearchParams(h.deviceRequests[0].body);
+    assert.equal(data.get('title'), description + ' · Kinolamp');
+    assert.equal(data.get('hardware'), description);
+    assert.equal(data.get('software'), 'Kinolamp ' + version + (software ? ' · ' + software : ''));
+  }
+  const custom = harness({ platform: 'browser', root: { navigator: { userAgent: 'Android 12; Pixel Build/123' } }, storage: { kp_self_device_name: 'Кухня' } });
+  const data = new URLSearchParams(custom.deviceRequests[0].body);
+  assert.equal(data.get('title'), 'Кухня');
+  assert.equal(data.get('hardware'), 'Pixel');
 });

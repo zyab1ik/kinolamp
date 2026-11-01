@@ -527,7 +527,11 @@ export type SettingAction = (
   advanced?: string | boolean
 ) => void;
 export interface Root {
-  navigator?: { userAgent: string };
+  navigator?: {
+    userAgent: string;
+    platform?: string;
+    userAgentData?: { platform: string };
+  };
   document?: Document;
   XMLHttpRequest?: typeof XMLHttpRequest;
   Navigator?: Navigator;

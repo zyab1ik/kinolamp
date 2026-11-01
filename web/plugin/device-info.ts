@@ -1,52 +1,66 @@
 import type { Lampa, Root } from './contracts.js';
 import { VERSION } from './config.js';
 
-// Read only descriptive fields. Never send the complete user agent or device IDs.
+function cleanDescription(value: string) {
+  // eslint-disable-next-line no-control-regex -- Device descriptions must not contain control characters.
+  var controls = /[\x00-\x1f\x7f]/g;
+  return value.replace(controls, '').trim().slice(0, 80);
+}
+
+// These are UA signatures, not a device allowlist. Unknown platforms are retained.
+function systemInfo(agent: string) {
+  var signatures: { name: string; pattern: RegExp }[] = [
+    { name: 'iOS', pattern: /(?:CPU(?: iPhone)? OS|iPhone OS) ([\d_]+)/i },
+    { name: 'Android', pattern: /Android[ /]([\d.]+)/i },
+    { name: 'Tizen', pattern: /Tizen[ /]([\d.]+)/i },
+    { name: 'webOS', pattern: /(?:webOS|Web0S)[ /]([\d.]+)/i },
+    { name: 'Windows NT', pattern: /Windows NT ([\d.]+)/i },
+    { name: 'macOS', pattern: /Mac OS X[ /]([\d_.]+)/i },
+    { name: 'Chrome OS', pattern: /CrOS [^; )]+ ([\d.]+)/i }
+  ];
+  for (var index = 0; index < signatures.length; index++) {
+    var signature = signatures[index];
+    var match = signature.pattern.exec(agent);
+    if (match) {
+      return { name: signature.name, version: match[1].replace(/_/g, '.') };
+    }
+  }
+  return { name: /Linux/i.test(agent) ? 'Linux' : '', version: '' };
+}
+
+// Use available descriptions only; never send the complete UA or device IDs.
 export function deviceInfo(Lampa: Lampa, root: Root, customName: string) {
   var platform =
     Lampa.Platform && typeof Lampa.Platform.get === 'function'
       ? Lampa.Platform.get()
       : '';
-  var agent = root.navigator ? root.navigator.userAgent : '';
-  var system = /(Tizen|Android|webOS|Web0S)[ /]([\d.]+)/i.exec(agent);
-  var labels: Record<string, string> = {
-    tizen: 'Samsung TV',
-    webos: 'LG TV',
-    philips: 'Philips TV',
-    android: 'Android',
-    androidtv: 'Android TV',
-    browser: 'Браузер'
-  };
-  var label = labels[platform];
-  var hardware = typeof label === 'string' ? label : platform || 'Lampa';
-  var operatingSystem = '';
-  if (system) {
-    var name = system[1].toLowerCase();
-    operatingSystem =
-      (name === 'web0s' || name === 'webos'
-        ? 'webOS'
-        : name === 'tizen'
-          ? 'Tizen'
-          : 'Android') +
-      ' ' +
-      system[2];
-    if (!platform || platform === 'browser') {
-      hardware = operatingSystem.split(' ')[0];
-    }
+  var navigator = root.navigator;
+  var agent = navigator ? navigator.userAgent : '';
+  var system = systemInfo(agent);
+  var hints = navigator && navigator.userAgentData;
+  // Browser-provided platform descriptions also cover systems unknown to us.
+  var availablePlatform = hints ? cleanDescription(hints.platform) : '';
+  if (!availablePlatform && navigator) {
+    availablePlatform = cleanDescription(navigator.platform || '');
   }
-  // Android's standard UA exposes the model immediately before "Build/".
-  // Other devices keep their platform name rather than guessing a model.
-  var model = /Android[^)]*;\s*([^;()]+?)\s+Build\//i.exec(agent);
-  if (model) {
-    hardware += ' · ' + model[1].trim().slice(0, 80);
-  }
-  // eslint-disable-next-line no-control-regex -- Device names must not contain control characters.
-  var controls = /[\x00-\x1f\x7f]/g;
-  var title = customName.replace(controls, '').trim().slice(0, 80);
+  var operatingSystem = system.name || availablePlatform;
+  var androidModel = /Android[^)]*;\s*([^;()]+?)\s+Build\//i.exec(agent);
+  var appleDevice = /\b(iPhone|iPad|iPod)\b/.exec(agent);
+  var model = androidModel
+    ? cleanDescription(androidModel[1])
+    : appleDevice
+      ? appleDevice[1]
+      : '';
+  var description = model || operatingSystem || cleanDescription(platform);
   return {
-    title: title || hardware + ' · Kinolamp',
-    hardware: hardware,
+    title:
+      cleanDescription(customName) ||
+      (description ? description + ' · Kinolamp' : 'Устройство с Lampa'),
+    hardware: description || 'Устройство с Lampa',
     software:
-      'Kinolamp ' + VERSION + (operatingSystem ? ' · ' + operatingSystem : '')
+      'Kinolamp ' +
+      VERSION +
+      (operatingSystem ? ' · ' + operatingSystem : '') +
+      (system.version ? ' ' + system.version : '')
   };
 }
