@@ -4,8 +4,9 @@ export interface MockItem {
   title: string;
   type?: string;
   year?: number;
-  watchers?: number;
-  views?: number;
+  watchers?: number | string;
+  count?: number | string;
+  views?: number | string;
   posters?: { big?: string; medium?: string; small?: string };
   videos?: object[];
 }
@@ -13,6 +14,8 @@ export interface MockRoute {
   [key: string]: string | number | undefined;
 }
 export interface MockReply {
+  categories?: { id: string; title: string; items: MockItem[] }[];
+  defer?: boolean;
   items?: MockItem[];
   item?: MockItem;
   collection?: MockItem;
@@ -22,6 +25,7 @@ export interface MockReply {
 }
 
 export interface MockRequest {
+  success(reply: MockReply): void;
   url: string;
   body: string | null;
   headers: Record<string, string>;
@@ -38,6 +42,8 @@ export interface Harness {
   menuButton: { run(): void };
   routes: MockRoute[];
   requests: MockRequest[];
+  callbacks: MockRequest[];
+  action(name: string): void;
   nodes: MockNode[];
   plays: unknown[];
   scrolls: { onEnd(): void }[];
@@ -49,6 +55,7 @@ export interface Harness {
 }
 export function harness(options: {
   native?: boolean;
+  root?: { document?: { currentScript?: { src: string } | null } };
   catalogMenu?: boolean;
   respond?: (request: MockRequest) => MockReply;
 }): Harness;

@@ -104,7 +104,13 @@ export interface Movie {
   imdb_id?: Id;
   media_type?: string;
 }
+export interface WebsiteCategory {
+  id: string;
+  title: string;
+  items: Item[];
+}
 export interface ApiResponse extends Video {
+  categories?: WebsiteCategory[];
   ok?: boolean;
   error?: string;
   access_token?: string;
@@ -286,6 +292,7 @@ export interface Route {
   kp_sort?: string;
   kp_folder?: Id;
   kp_collection?: Id;
+  kp_category?: string;
 }
 export interface PageRoute {
   [key: string]: string | number | undefined;
@@ -302,6 +309,7 @@ export interface PageRoute {
   sort?: string;
   folder?: Id;
   collection?: Id;
+  category?: string;
 }
 export interface Row {
   key?: string;
@@ -324,6 +332,7 @@ export interface PageData {
   rows: Row[];
   actions?: MenuEntry[];
   tabs?: MenuEntry[];
+  sidebar?: MenuEntry[];
   details?: string;
   description?: string;
   layout?: string;

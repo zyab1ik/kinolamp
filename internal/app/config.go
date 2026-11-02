@@ -7,14 +7,15 @@ import (
 )
 
 type config struct {
-	proxy          bool
-	token          string
-	hosts, origins []string
-	base           string
+	kinoWatchCookie string
+	proxy           bool
+	token           string
+	hosts, origins  []string
+	base            string
 }
 
 func loadConfig(getenv func(string) string) (config, error) {
-	c := config{proxy: getenv("ENABLE_PROXY") == "true", token: getenv("PROXY_TOKEN"), base: getenv("PUBLIC_BASE_URL")}
+	c := config{kinoWatchCookie: getenv("KINOWATCH_COOKIE"), proxy: getenv("ENABLE_PROXY") == "true", token: getenv("PROXY_TOKEN"), base: getenv("PUBLIC_BASE_URL")}
 	var err error
 	c.hosts, err = parseHosts(getenv("CDN_HOSTS"))
 	if err != nil {

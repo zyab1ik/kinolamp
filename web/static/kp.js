@@ -57,7 +57,7 @@
     }
 
     // Transport is injected to test OAuth without credentials or real network calls.
-    function createClient(storage, transport) {
+    function createClient(storage, transport, categoriesURL) {
       var refreshing = false;
       var waiting = [];
       // Logout invalidates pending requests and token refreshes.
@@ -174,6 +174,21 @@
         get: get,
         set: set,
         api: api,
+        categories: function (done) {
+          if (!categoriesURL) {
+            done({ code: 'categories_unavailable' });
+            return;
+          }
+          var expected = generation;
+          // The plugin server receives no KinoPub access or refresh token.
+          transport('GET', categoriesURL, null, {}, function (error, json) {
+            if (expected !== generation) {
+              done({ code: 'session_changed' });
+              return;
+            }
+            done(error, json);
+          });
+        },
         oauth: oauth,
         logout: logout,
         hasToken: function () {
@@ -1129,7 +1144,7 @@
     }
 
     var PAGE_STYLES =
-      ".kp-page {\n  font-family: inherit;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 0.65em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.35em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 0.45em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__card {\n  display: flex;\n  flex-direction: column;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__poster {\n  border-radius: 0.4em;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__name {\n  order: 1;\n}\n.kp-page__original {\n  order: 2;\n  font-size: 0.85em;\n  line-height: 1.35;\n  margin-top: 0.25em;\n  opacity: 0.55;\n  word-wrap: break-word;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__meta {\n  order: 3;\n  font-size: 0.85em;\n  line-height: 1.4;\n  opacity: 0.75;\n}\n.kp-page__badges {\n  position: absolute;\n  top: 0.55em;\n  left: 0.55em;\n  right: 0.55em;\n}\n.kp-page__badge {\n  display: inline-block;\n  margin: 0 0.35em 0.35em 0;\n  padding: 0.25em 0.45em;\n  border-radius: 0.3em;\n  background: #143b2c;\n  color: #b6f4cf;\n  font-size: 0.75em;\n  font-weight: 600;\n}\n.kp-page__rating {\n  position: absolute;\n  bottom: 0.55em;\n  left: 0.55em;\n  padding: 0.3em 0.5em;\n  border-radius: 0.3em;\n  background: rgba(0, 0, 0, 0.8);\n  color: #fff;\n  font-size: 0.8em;\n}\n.kp-page__pagination {\n  margin-top: 1.8em;\n  justify-content: center;\n}\n.kp-page__pagination:empty {\n  display: none;\n}\n\n.kp-page__loading {\n  font: inherit;\n  width: 100%;\n  text-align: center;\n  opacity: 0.7;\n  padding: 0.6em;\n}\n\n.kp-page__grid[data-layout='collections'] .kp-page__card {\n  padding: 0.65em;\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  border-radius: 1.5em;\n  background: rgba(255, 255, 255, 0.025);\n}\n.kp-page__grid[data-layout='collections'] .kp-page__poster {\n  border-radius: 1em;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  margin: 0.65em 0.3em 0;\n  font-weight: 600;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__meta {\n  margin: 0.4em 0.3em;\n  font-size: 0.8em;\n}\n\n.kp-page__catalog-body {\n  display: flex;\n  align-items: flex-start;\n}\n.kp-page__catalog-body > .kp-page__grid {\n  flex: 1;\n  min-width: 0;\n}\n.kp-page__stats {\n  position: absolute;\n  bottom: 0.65em;\n  left: 0.35em;\n  right: 0.35em;\n  display: flex;\n  justify-content: center;\n}\n.kp-page__stats:empty {\n  display: none;\n}\n.kp-page__stat {\n  padding: 0.22em 0.45em;\n  margin: 0 0.12em;\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 1em;\n  background: rgba(10, 13, 18, 0.9);\n  color: #d3d9e0;\n  font-size: 0.85em;\n  white-space: nowrap;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 2.7em;\n  max-height: 2.7em;\n  line-height: 1.35;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__meta:empty,\n.kp-page__tabs:empty {\n  display: none;\n}\n\n/* Lampa reserves fading space around native lists; this page has its own header. */\n.kp-page > .scroll {\n  -webkit-mask-image: none;\n  mask-image: none;\n}\n.kp-page > .scroll > .scroll__content {\n  padding: 0.3em 0 1em;\n}\n.kp-page__controls {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: flex-start;\n  margin-bottom: 0.25em;\n}\n.kp-page__controls > .kp-page__toolbar {\n  margin: 0 0.8em 0 0;\n}\n.kp-page__controls .kp-page__action {\n  margin-bottom: 0.4em;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  display: block;\n  -webkit-line-clamp: unset;\n  max-height: none;\n}\n";
+      ".kp-page {\n  font-family: inherit;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  padding: 0.65em 2em;\n  box-sizing: border-box;\n}\n.kp-page__head {\n  display: flex;\n  align-items: center;\n  margin-bottom: 0.35em;\n}\n.kp-page__title {\n  font-size: 1.8em;\n  font-weight: 600;\n  line-height: 1.2;\n}\n.kp-page__status {\n  opacity: 0.65;\n  margin-bottom: 0.45em;\n}\n.kp-page > .scroll {\n  flex: 1;\n  min-height: 0;\n}\n.kp-page__grid {\n  display: grid;\n  grid-template-columns: repeat(5, minmax(0, 1fr));\n  /* Older TV engines understand grid-gap but ignore the newer gap alias. */\n  grid-gap: 2em 1.5em;\n  align-items: start;\n  padding: 0.4em;\n}\n.kp-page__card {\n  min-width: 0;\n  box-sizing: border-box;\n}\n.kp-page__poster {\n  height: 0;\n  padding-bottom: 150%;\n  position: relative;\n  border-radius: 0.6em;\n  background: rgba(255, 255, 255, 0.07);\n  overflow: hidden;\n  outline: 0.18em solid transparent;\n  outline-offset: 0.25em;\n}\n.kp-page__poster img {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}\n.kp-page__placeholder {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  opacity: 0.4;\n  font-size: 2em;\n}\n.kp-page__card.focus .kp-page__poster {\n  outline-color: currentColor;\n}\n.kp-page__name {\n  margin-top: 0.85em;\n  word-wrap: break-word;\n}\n.kp-page__meta {\n  opacity: 0.55;\n  font-size: 0.75em;\n  margin-top: 0.3em;\n}\n@media (max-width: 800px) {\n  .kp-page {\n    padding: 1em;\n  }\n  .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n.kp-page__details {\n  font-size: 1em;\n  opacity: 0.8;\n  line-height: 1.5;\n}\n.kp-page__description {\n  max-width: 65em;\n  font-size: 1.05em;\n  line-height: 1.55;\n  white-space: pre-line;\n  margin: 0.6em 0 1.5em;\n}\n.kp-page__description:empty,\n.kp-page__details:empty {\n  display: none;\n}\n.kp-page__grid[data-layout='seasons'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] {\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='episodes'] .kp-page__name,\n.kp-page__grid[data-layout='seasons'] .kp-page__name {\n  font-size: 1.15em;\n  font-weight: 600;\n}\n.kp-page__meta {\n  font-size: 0.95em;\n  opacity: 0.75;\n  line-height: 1.4;\n}\n@media (max-width: 800px) {\n  .kp-page__grid[data-layout='episodes'],\n  .kp-page__grid[data-layout='seasons'] {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__grid[data-layout='episodes'] {\n    grid-template-columns: 1fr;\n  }\n}\n.kp-page__toolbar {\n  display: flex;\n  flex-wrap: wrap;\n  margin: 0.2em 0 0.6em;\n}\n.kp-page__action {\n  /* Margins also work on TV browsers without flex gap support. */\n  margin: 0 0.6em 0.6em 0;\n  font-size: 1em;\n  padding: 0.6em 1em;\n  border-radius: 0.35em;\n  background: rgba(255, 255, 255, 0.09);\n  line-height: 1.2;\n}\n.kp-page__action.focus {\n  background: #fff;\n  color: #1d1f20;\n}\n.kp-page__grid[data-layout='folders'] {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.kp-page__grid[data-layout='folders'] .kp-page__poster {\n  padding-bottom: 56.25%;\n}\n.kp-page__grid[data-layout='folders'] .kp-page__placeholder {\n  font-size: 3em;\n  color: #9cebc9;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__card {\n  display: flex;\n  flex-direction: column;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__poster {\n  border-radius: 0.4em;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__name {\n  order: 1;\n}\n.kp-page__original {\n  order: 2;\n  font-size: 0.85em;\n  line-height: 1.35;\n  margin-top: 0.25em;\n  opacity: 0.55;\n  word-wrap: break-word;\n}\n.kp-page__grid[data-layout='catalog'] .kp-page__meta {\n  order: 3;\n  font-size: 0.85em;\n  line-height: 1.4;\n  opacity: 0.75;\n}\n.kp-page__badges {\n  position: absolute;\n  top: 0.55em;\n  left: 0.55em;\n  right: 0.55em;\n}\n.kp-page__badge {\n  display: inline-block;\n  margin: 0 0.35em 0.35em 0;\n  padding: 0.25em 0.45em;\n  border-radius: 0.3em;\n  background: #143b2c;\n  color: #b6f4cf;\n  font-size: 0.75em;\n  font-weight: 600;\n}\n.kp-page__rating {\n  position: absolute;\n  bottom: 0.55em;\n  left: 0.55em;\n  padding: 0.3em 0.5em;\n  border-radius: 0.3em;\n  background: rgba(0, 0, 0, 0.8);\n  color: #fff;\n  font-size: 0.8em;\n}\n.kp-page__pagination {\n  margin-top: 1.8em;\n  justify-content: center;\n}\n.kp-page__pagination:empty {\n  display: none;\n}\n\n.kp-page__loading {\n  font: inherit;\n  width: 100%;\n  text-align: center;\n  opacity: 0.7;\n  padding: 0.6em;\n}\n\n.kp-page__grid[data-layout='collections'] .kp-page__card {\n  padding: 0.65em;\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  border-radius: 1.5em;\n  background: rgba(255, 255, 255, 0.025);\n}\n.kp-page__grid[data-layout='collections'] .kp-page__poster {\n  border-radius: 1em;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  margin: 0.65em 0.3em 0;\n  font-weight: 600;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__meta {\n  margin: 0.4em 0.3em;\n  font-size: 0.8em;\n}\n\n.kp-page__catalog-body {\n  display: flex;\n  align-items: flex-start;\n}\n.kp-page__catalog-body > .kp-page__grid {\n  flex: 1;\n  min-width: 0;\n}\n.kp-page__stats {\n  position: absolute;\n  bottom: 0.65em;\n  left: 0.35em;\n  right: 0.35em;\n  display: flex;\n  justify-content: center;\n}\n.kp-page__stats:empty {\n  display: none;\n}\n.kp-page__stat {\n  padding: 0.22em 0.45em;\n  margin: 0 0.12em;\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 1em;\n  background: rgba(10, 13, 18, 0.9);\n  color: #d3d9e0;\n  font-size: 0.85em;\n  white-space: nowrap;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 2.7em;\n  max-height: 2.7em;\n  line-height: 1.35;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__meta:empty,\n.kp-page__tabs:empty {\n  display: none;\n}\n\n/* Lampa reserves fading space around native lists; this page has its own header. */\n.kp-page > .scroll {\n  -webkit-mask-image: none;\n  mask-image: none;\n}\n.kp-page > .scroll > .scroll__content {\n  padding: 0.3em 0 1em;\n}\n.kp-page__controls {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: flex-start;\n  margin-bottom: 0.25em;\n}\n.kp-page__controls > .kp-page__toolbar {\n  margin: 0 0.8em 0 0;\n}\n.kp-page__controls .kp-page__action {\n  margin-bottom: 0.4em;\n}\n.kp-page__grid[data-layout='collections'] .kp-page__name {\n  display: block;\n  -webkit-line-clamp: unset;\n  max-height: none;\n}\n\n.kp-page__categories {\n  width: 15em;\n  flex-shrink: 0;\n  margin: 0.4em 1.7em 0 0;\n  padding: 0.65em;\n  border-radius: 1em;\n  background: rgba(0, 0, 0, 0.2);\n}\n.kp-page__categories:empty {\n  display: none;\n}\n.kp-page__categories .kp-page__action {\n  margin: 0 0 0.2em;\n  line-height: 1.5;\n  background: transparent;\n}\n.kp-page__categories .kp-page__action.focus {\n  background: #fff;\n}\n.kp-page__categories:not(:empty) + .kp-page__grid {\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n@media (max-width: 1100px) {\n  .kp-page__categories:not(:empty) + .kp-page__grid {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n  }\n  .kp-page__catalog-body {\n    display: block;\n  }\n  .kp-page__categories {\n    display: flex;\n    width: auto;\n    overflow-x: auto;\n    margin: 0 0 1em;\n    padding: 0.4em;\n  }\n  .kp-page__categories .kp-page__action {\n    flex: 0 0 auto;\n    max-width: 18em;\n    margin: 0 0.4em 0 0;\n  }\n}\n@media (max-width: 480px) {\n  .kp-page__categories:not(:empty) + .kp-page__grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n";
 
     function createNativePages(Lampa, $, navigation, load, activate) {
       if (!Lampa.Component || !Lampa.Activity || !Lampa.Scroll || !navigation) {
@@ -1158,7 +1173,8 @@
         ).text('Загрузка…');
         var grid = $('<div class="kp-page__grid"></div>');
         var catalogBody = $('<div class="kp-page__catalog-body"></div>');
-        catalogBody.append(grid);
+        var sidebar = $('<div class="kp-page__categories"></div>');
+        catalogBody.append(sidebar).append(grid);
         var toolbar = $('<div class="kp-page__toolbar"></div>');
         var tabs = $('<div class="kp-page__toolbar kp-page__tabs"></div>');
         var controls = $('<div class="kp-page__controls"></div>');
@@ -1365,6 +1381,7 @@
             grid.empty();
             toolbar.empty();
             tabs.empty();
+            sidebar.empty();
             pagination.empty();
             focusedElement = false;
             captions = [];
@@ -1383,6 +1400,7 @@
               grid.attr('data-layout', data.layout || 'posters');
               buttons(data.actions || []);
               buttons(data.tabs || [], tabs);
+              buttons(data.sidebar || [], sidebar);
               status.text(
                 data.rows.length
                   ? data.hint || 'Выбери подходящий результат.'
@@ -1481,7 +1499,8 @@
             kp_quality_title: route.qualityTitle,
             kp_sort: route.sort,
             kp_folder: route.folder,
-            kp_collection: route.collection
+            kp_collection: route.collection,
+            kp_category: route.category
           });
         },
         current: function () {
@@ -2802,7 +2821,8 @@
           qualityTitle: route.kp_quality_title || '',
           sort: route.kp_sort || '',
           folder: route.kp_folder || '',
-          collection: route.kp_collection || ''
+          collection: route.kp_collection || '',
+          category: route.kp_category || ''
         };
         Object.keys(changes).forEach(function (key) {
           result[key] = changes[key];
@@ -3043,6 +3063,7 @@
           folders: 'Избранное',
           folder: 'Избранное',
           collections: 'Подборки',
+          'collection-categories': 'Категории',
           collection: 'Подборка'
         };
         var section = Object.prototype.hasOwnProperty.call(
@@ -3101,6 +3122,9 @@
         var bookmarks = section === 'folder' || section === 'folders';
         var collections = section === 'collections';
         var collection = section === 'collection';
+        var categorized = section === 'collection-categories';
+        var groups = [];
+        var selectedCategory;
         actions.splice(3, 0, {
           title: 'Разделы',
           run: function () {
@@ -3145,7 +3169,7 @@
         if (section === 'search') {
           path += '/search';
           params.q = String(route.kp_query || '').slice(0, 100);
-        } else if (collections) {
+        } else if (collections || categorized) {
           path = '/collections';
           var collectionSorts = {
             'created-': 'Новые',
@@ -3185,6 +3209,17 @@
                 );
               }
             });
+          });
+          collectionTabs.push({
+            title: (categorized ? '✓ ' : '') + 'Категории',
+            run: function () {
+              pages.show(
+                catalogRoute(route, {
+                  section: 'collection-categories',
+                  page: 1
+                })
+              );
+            }
           });
         } else if (collection) {
           path = '/collections/view';
@@ -3255,7 +3290,7 @@
           if (collections && !json.pagination && items.length === 20) {
             total = page + 1;
           }
-          if (bookmarks || collection) {
+          if (bookmarks || collection || categorized) {
             total = Math.max(1, Math.ceil(items.length / 20));
             items = items.slice((page - 1) * 20, page * 20);
           }
@@ -3274,26 +3309,34 @@
                   ? json.folder.title
                   : collection && json.collection
                     ? json.collection.title
-                    : names[section]),
+                    : categorized && selectedCategory
+                      ? selectedCategory.title +
+                        ' · ' +
+                        selectedCategory.items.length
+                      : names[section]),
             details: [
               !bookmarks &&
                 !collections &&
+                !categorized &&
                 !collection &&
                 section !== 'search' &&
                 route.kp_genre_title,
               !bookmarks &&
                 !collections &&
+                !categorized &&
                 !collection &&
                 section !== 'search' &&
                 route.kp_quality_title
             ]
               .filter(Boolean)
               .join(' · '),
-            hint: collections
-              ? 'Выбери подборку, чтобы открыть фильмы и сериалы.'
-              : section === 'folders'
-                ? 'Выбери папку закладок своего аккаунта KinoPub.'
-                : 'Удерживай OK на карточке, чтобы добавить в закладки.',
+            hint: categorized
+              ? 'Категории и подборки с kino.watch.'
+              : collections
+                ? 'Выбери подборку, чтобы открыть фильмы и сериалы.'
+                : section === 'folders'
+                  ? 'Выбери папку закладок своего аккаунта KinoPub.'
+                  : 'Удерживай OK на карточке, чтобы добавить в закладки.',
             empty: collections
               ? 'Список подборок пуст.'
               : collection
@@ -3304,11 +3347,27 @@
             layout:
               section === 'folders'
                 ? 'folders'
-                : collections
+                : collections || categorized
                   ? 'collections'
                   : 'catalog',
             actions: actions,
             tabs: collectionTabs,
+            sidebar: categorized
+              ? groups.map(function (group) {
+                  return {
+                    title:
+                      (group === selectedCategory ? '✓ ' : '') +
+                      group.title +
+                      ' · ' +
+                      group.items.length,
+                    run: function () {
+                      pages.show(
+                        catalogRoute(route, { category: group.id, page: 1 })
+                      );
+                    }
+                  };
+                })
+              : [],
             more:
               page < total && items.length
                 ? function (callback) {
@@ -3322,7 +3381,7 @@
                   }
                 : null,
             rows: items.map(function (item) {
-              if (collections) {
+              if (collections || categorized) {
                 var posters = item.posters || {};
                 return {
                   key: 'collection:' + item.id,
@@ -3330,15 +3389,27 @@
                   stats: [
                     {
                       title: 'Смотрят',
-                      text: '✓ ' + (Number(item.watchers) || 0)
+                      text:
+                        '✓ ' +
+                        (categorized
+                          ? item.watchers || 0
+                          : Number(item.watchers) || 0)
                     },
                     {
                       title: 'Фильмов',
-                      text: '▤ ' + (Number(item.count) || 0)
+                      text:
+                        '▤ ' +
+                        (categorized
+                          ? item.count || 0
+                          : Number(item.count) || 0)
                     },
                     {
                       title: 'Просмотров',
-                      text: '◉ ' + (Number(item.views) || 0)
+                      text:
+                        '◉ ' +
+                        (categorized
+                          ? item.views || 0
+                          : Number(item.views) || 0)
                     }
                   ].filter(function (stat) {
                     return stat.title !== 'Фильмов' || item.count !== undefined;
@@ -3420,7 +3491,40 @@
             })
           });
         }
-        client.api(path, params, loaded);
+        if (categorized) {
+          client.categories(function (error, json) {
+            if (error) {
+              done(
+                error.code === 'categories_login_required'
+                  ? 'Нужно подключить веб-сессию kino.watch на сервере Kinolamp.'
+                  : 'Не удалось загрузить категории kino.watch. Повтори позже.'
+              );
+              return;
+            }
+            groups =
+              json && Array.isArray(json.categories)
+                ? json.categories.filter(function (group) {
+                    return (
+                      group &&
+                      typeof group.id === 'string' &&
+                      typeof group.title === 'string' &&
+                      Array.isArray(group.items)
+                    );
+                  })
+                : [];
+            selectedCategory =
+              groups.filter(function (group) {
+                return group.id === route.kp_category;
+              })[0] || groups[0];
+            if (!selectedCategory) {
+              done('Список категорий kino.watch недоступен.');
+              return;
+            }
+            loaded(null, { items: selectedCategory.items });
+          });
+        } else {
+          client.api(path, params, loaded);
+        }
       }
       return { open: openCatalog, load: catalogRows };
     }
@@ -3926,7 +4030,14 @@
       var ui = createUi(Lampa);
       var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
       var transport = createTransport(Lampa, diagnostics);
-      var client = createClient(Lampa.Storage, transport);
+      var sourceScript = root.document && root.document.currentScript;
+      var origin =
+        sourceScript && String(sourceScript.src).match(/^https?:\/\/[^/?#]+/);
+      var client = createClient(
+        Lampa.Storage,
+        transport,
+        origin ? origin[0] + '/api/collections/categories' : ''
+      );
       var authorization = createAuthorization(Lampa, $, client, ui, root);
       var playerDiagnostics = createPlayerDiagnostics(
         Lampa,
