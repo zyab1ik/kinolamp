@@ -286,7 +286,6 @@ export interface Route {
   kp_sort?: string;
   kp_folder?: Id;
   kp_collection?: Id;
-  kp_category?: string;
 }
 export interface PageRoute {
   [key: string]: string | number | undefined;
@@ -303,7 +302,6 @@ export interface PageRoute {
   sort?: string;
   folder?: Id;
   collection?: Id;
-  category?: string;
 }
 export interface Row {
   key?: string;
@@ -325,7 +323,6 @@ export interface PageData {
   title: string;
   rows: Row[];
   actions?: MenuEntry[];
-  sidebar?: MenuEntry[];
   tabs?: MenuEntry[];
   details?: string;
   description?: string;

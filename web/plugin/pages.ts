@@ -50,8 +50,7 @@ export function createNativePages(
     );
     var grid = $('<div class="kp-page__grid"></div>');
     var catalogBody = $('<div class="kp-page__catalog-body"></div>');
-    var sidebar = $('<div class="kp-page__categories"></div>');
-    catalogBody.append(sidebar).append(grid);
+    catalogBody.append(grid);
     var toolbar = $('<div class="kp-page__toolbar"></div>');
     var tabs = $('<div class="kp-page__toolbar kp-page__tabs"></div>');
     var controls = $('<div class="kp-page__controls"></div>');
@@ -254,7 +253,6 @@ export function createNativePages(
         grid.empty();
         toolbar.empty();
         tabs.empty();
-        sidebar.empty();
         pagination.empty();
         focusedElement = false;
         captions = [];
@@ -273,7 +271,6 @@ export function createNativePages(
           grid.attr('data-layout', data!.layout || 'posters');
           buttons(data!.actions || []);
           buttons(data!.tabs || [], tabs);
-          buttons(data!.sidebar || [], sidebar);
           status.text(
             data!.rows.length
               ? data!.hint || 'Выбери подходящий результат.'
@@ -372,8 +369,7 @@ export function createNativePages(
         kp_quality_title: route.qualityTitle,
         kp_sort: route.sort,
         kp_folder: route.folder,
-        kp_collection: route.collection,
-        kp_category: route.category
+        kp_collection: route.collection
       });
     },
     current: function () {

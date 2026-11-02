@@ -14,8 +14,6 @@ import type {
   MenuEntry
 } from './contracts.js';
 
-import { collectionCategories } from './collection-categories.js';
-
 export function createCatalog(
   Lampa: Lampa,
   client: Client,
@@ -52,8 +50,7 @@ export function createCatalog(
       qualityTitle: route.kp_quality_title || '',
       sort: route.kp_sort || '',
       folder: route.kp_folder || '',
-      collection: route.kp_collection || '',
-      category: route.kp_category || ''
+      collection: route.kp_collection || ''
     };
     Object.keys(changes).forEach(function (key) {
       result[key] = changes[key];
@@ -294,7 +291,6 @@ export function createCatalog(
       folders: 'Избранное',
       folder: 'Избранное',
       collections: 'Подборки',
-      'collection-categories': 'Подборки',
       collection: 'Подборка'
     };
     var section = Object.prototype.hasOwnProperty.call(names, route.kp_section!)
@@ -331,8 +327,7 @@ export function createCatalog(
           } else {
             pages!.show(
               catalogRoute(route, {
-                section:
-                  name === 'collections' ? 'collection-categories' : name,
+                section: name,
                 page: 1,
                 query: '',
                 folder: '',
@@ -351,11 +346,6 @@ export function createCatalog(
     var bookmarks = section === 'folder' || section === 'folders';
     var collections = section === 'collections';
     var collection = section === 'collection';
-    var categorized = section === 'collection-categories';
-    var category =
-      collectionCategories.filter(function (value) {
-        return value.id === route.kp_category;
-      })[0] || collectionCategories[0];
     actions.splice(3, 0, {
       title: 'Разделы',
       run: function () {
@@ -400,7 +390,7 @@ export function createCatalog(
     if (section === 'search') {
       path += '/search';
       params.q = String(route.kp_query || '').slice(0, 100);
-    } else if (collections || categorized) {
+    } else if (collections) {
       path = '/collections';
       var collectionSorts: Record<string, string> = {
         'created-': 'Новые',
@@ -440,14 +430,6 @@ export function createCatalog(
             );
           }
         });
-      });
-      collectionTabs.push({
-        title: (categorized ? '✓ ' : '') + 'Категории',
-        run: function () {
-          pages!.show(
-            catalogRoute(route, { section: 'collection-categories', page: 1 })
-          );
-        }
       });
     } else if (collection) {
       path = '/collections/view';
@@ -518,7 +500,7 @@ export function createCatalog(
       if (collections && !json!.pagination && items.length === 20) {
         total = page + 1;
       }
-      if (bookmarks || collection || categorized) {
+      if (bookmarks || collection) {
         total = Math.max(1, Math.ceil(items.length / 20));
         items = items.slice((page - 1) * 20, page * 20);
       }
@@ -537,32 +519,26 @@ export function createCatalog(
               ? json!.folder.title
               : collection && json!.collection
                 ? json!.collection.title
-                : categorized
-                  ? category.title + ' · ' + category.items.length
-                  : names[section]),
+                : names[section]),
         details: [
           !bookmarks &&
             !collections &&
-            !categorized &&
             !collection &&
             section !== 'search' &&
             route.kp_genre_title,
           !bookmarks &&
             !collections &&
-            !categorized &&
             !collection &&
             section !== 'search' &&
             route.kp_quality_title
         ]
           .filter(Boolean)
           .join(' · '),
-        hint: categorized
-          ? 'Подборки kino.watch · 37 категорий · 51 без категории'
-          : collections
-            ? 'Выбери подборку, чтобы открыть фильмы и сериалы.'
-            : section === 'folders'
-              ? 'Выбери папку закладок своего аккаунта KinoPub.'
-              : 'Удерживай OK на карточке, чтобы добавить в закладки.',
+        hint: collections
+          ? 'Выбери подборку, чтобы открыть фильмы и сериалы.'
+          : section === 'folders'
+            ? 'Выбери папку закладок своего аккаунта KinoPub.'
+            : 'Удерживай OK на карточке, чтобы добавить в закладки.',
         empty: collections
           ? 'Список подборок пуст.'
           : collection
@@ -573,27 +549,11 @@ export function createCatalog(
         layout:
           section === 'folders'
             ? 'folders'
-            : collections || categorized
+            : collections
               ? 'collections'
               : 'catalog',
         actions: actions,
         tabs: collectionTabs,
-        sidebar: categorized
-          ? collectionCategories.map(function (value) {
-              return {
-                title:
-                  (category.id === value.id ? '✓ ' : '') +
-                  value.title +
-                  ' · ' +
-                  value.items.length,
-                run: function () {
-                  pages!.show(
-                    catalogRoute(route, { category: value.id, page: 1 })
-                  );
-                }
-              };
-            })
-          : [],
         more:
           page < total && items.length
             ? function (callback) {
@@ -607,7 +567,7 @@ export function createCatalog(
               }
             : null,
         rows: items.map(function (item) {
-          if (collections || categorized) {
+          if (collections) {
             var posters = item.posters || {};
             return {
               key: 'collection:' + item.id,
@@ -617,8 +577,7 @@ export function createCatalog(
                 { title: 'Фильмов', text: '▤ ' + (Number(item.count) || 0) },
                 {
                   title: 'Просмотров',
-                  text:
-                    '◉ ' + (categorized ? item.views : Number(item.views) || 0)
+                  text: '◉ ' + (Number(item.views) || 0)
                 }
               ].filter(function (stat) {
                 return stat.title !== 'Фильмов' || item.count !== undefined;
@@ -700,11 +659,7 @@ export function createCatalog(
         })
       });
     }
-    if (categorized) {
-      loaded(null, { items: category.items });
-    } else {
-      client.api(path, params, loaded);
-    }
+    client.api(path, params, loaded);
   }
 
   return { open: openCatalog, load: catalogRows };

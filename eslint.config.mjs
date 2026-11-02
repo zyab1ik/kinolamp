@@ -24,6 +24,20 @@ const pluginRules = {
 
 export default [
   {
+    files: ['test/**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      ecmaVersion: 'latest',
+      sourceType: 'module'
+    },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    rules: {
+      ...tseslint.configs.recommended[2].rules,
+      'no-undef': 'off',
+      'no-unused-vars': 'off'
+    }
+  },
+  {
     files: ['web/plugin/**/*.js', 'web/static/kp.js'],
     languageOptions: {
       ecmaVersion: 2015,
