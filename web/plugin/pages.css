@@ -3,13 +3,13 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1.5em 2em;
+  padding: 0.65em 2em;
   box-sizing: border-box;
 }
 .kp-page__head {
   display: flex;
   align-items: center;
-  margin-bottom: 0.7em;
+  margin-bottom: 0.35em;
 }
 .kp-page__title {
   font-size: 1.8em;
@@ -18,7 +18,7 @@
 }
 .kp-page__status {
   opacity: 0.65;
-  margin-bottom: 1em;
+  margin-bottom: 0.45em;
 }
 .kp-page > .scroll {
   flex: 1;
@@ -227,4 +227,139 @@
   text-align: center;
   opacity: 0.7;
   padding: 0.6em;
+}
+
+.kp-page__grid[data-layout='collections'] .kp-page__card {
+  padding: 0.65em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5em;
+  background: rgba(255, 255, 255, 0.025);
+}
+.kp-page__grid[data-layout='collections'] .kp-page__poster {
+  border-radius: 1em;
+}
+.kp-page__grid[data-layout='collections'] .kp-page__name {
+  margin: 0.65em 0.3em 0;
+  font-weight: 600;
+}
+.kp-page__grid[data-layout='collections'] .kp-page__meta {
+  margin: 0.4em 0.3em;
+  font-size: 0.8em;
+}
+
+.kp-page__catalog-body {
+  display: flex;
+  align-items: flex-start;
+}
+.kp-page__catalog-body > .kp-page__grid {
+  flex: 1;
+  min-width: 0;
+}
+.kp-page__stats {
+  position: absolute;
+  bottom: 0.65em;
+  left: 0.35em;
+  right: 0.35em;
+  display: flex;
+  justify-content: center;
+}
+.kp-page__stats:empty {
+  display: none;
+}
+.kp-page__stat {
+  padding: 0.22em 0.45em;
+  margin: 0 0.12em;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1em;
+  background: rgba(10, 13, 18, 0.9);
+  color: #d3d9e0;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.kp-page__grid[data-layout='collections'] .kp-page__name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
+  max-height: 2.7em;
+  line-height: 1.35;
+}
+.kp-page__grid[data-layout='collections'] .kp-page__meta:empty,
+.kp-page__tabs:empty {
+  display: none;
+}
+
+/* Lampa reserves fading space around native lists; this page has its own header. */
+.kp-page > .scroll {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.kp-page > .scroll > .scroll__content {
+  padding: 0.3em 0 1em;
+}
+.kp-page__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 0.25em;
+}
+.kp-page__controls > .kp-page__toolbar {
+  margin: 0 0.8em 0 0;
+}
+.kp-page__controls .kp-page__action {
+  margin-bottom: 0.4em;
+}
+.kp-page__grid[data-layout='collections'] .kp-page__name {
+  display: block;
+  -webkit-line-clamp: unset;
+  max-height: none;
+}
+
+.kp-page__categories {
+  width: 15em;
+  flex-shrink: 0;
+  margin: 0.4em 1.7em 0 0;
+  padding: 0.65em;
+  border-radius: 1em;
+  background: rgba(0, 0, 0, 0.2);
+}
+.kp-page__categories:empty {
+  display: none;
+}
+.kp-page__categories .kp-page__action {
+  margin: 0 0 0.2em;
+  line-height: 1.5;
+  background: transparent;
+}
+.kp-page__categories .kp-page__action.focus {
+  background: #fff;
+}
+.kp-page__categories:not(:empty) + .kp-page__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .kp-page__categories:not(:empty) + .kp-page__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .kp-page__catalog-body {
+    display: block;
+  }
+  .kp-page__categories {
+    display: flex;
+    width: auto;
+    overflow-x: auto;
+    margin: 0 0 1em;
+    padding: 0.4em;
+  }
+  .kp-page__categories .kp-page__action {
+    flex: 0 0 auto;
+    max-width: 18em;
+    margin: 0 0.4em 0 0;
+  }
+}
+@media (max-width: 480px) {
+  .kp-page__categories:not(:empty) + .kp-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

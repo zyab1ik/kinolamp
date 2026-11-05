@@ -35,18 +35,19 @@ var publicAssets = map[string]struct{ name, contentType string }{
 }
 
 type app struct {
-	config  config
-	client  *http.Client
-	now     func() time.Time
-	random  io.Reader
-	mu      sync.Mutex
-	tickets map[string]ticket
-	rates   map[string]rate
-	slots   chan struct{}
+	categories *categorySource
+	config     config
+	client     *http.Client
+	now        func() time.Time
+	random     io.Reader
+	mu         sync.Mutex
+	tickets    map[string]ticket
+	rates      map[string]rate
+	slots      chan struct{}
 }
 
 func newApp(c config, client *http.Client) *app {
-	return &app{config: c, client: client, now: time.Now, random: rand.Reader, tickets: make(map[string]ticket), rates: make(map[string]rate), slots: make(chan struct{}, 4)}
+	return &app{categories: newCategorySource(c.kinoWatchCookie), config: c, client: client, now: time.Now, random: rand.Reader, tickets: make(map[string]ticket), rates: make(map[string]rate), slots: make(chan struct{}, 4)}
 }
 
 func respond(w http.ResponseWriter, status int, value any) {
@@ -95,6 +96,11 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == "GET" && r.URL.Path == "/health" {
 		respond(w, 200, map[string]any{"ok": true, "version": Version, "proxy": a.config.proxy})
+		return
+	}
+	if r.Method == "GET" && r.URL.Path == "/api/collections/categories" && r.URL.RawQuery == "" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		a.serveCategories(w, r)
 		return
 	}
 	if !a.config.proxy {

@@ -84,6 +84,8 @@ export interface Item {
   quality?: Id;
   ac3?: Id;
   count?: Id;
+  watchers?: Id;
+  views?: Id;
   plot?: string;
   posters?: Posters;
   genres?: Named[];
@@ -102,7 +104,13 @@ export interface Movie {
   imdb_id?: Id;
   media_type?: string;
 }
+export interface WebsiteCategory {
+  id: string;
+  title: string;
+  items: Item[];
+}
 export interface ApiResponse extends Video {
+  categories?: WebsiteCategory[];
   ok?: boolean;
   error?: string;
   access_token?: string;
@@ -115,6 +123,7 @@ export interface ApiResponse extends Video {
   item?: Item;
   items?: Item[];
   folder?: Item;
+  collection?: Item;
   folders?: Item[];
   pagination?: { total?: number };
   url?: string;
@@ -282,6 +291,8 @@ export interface Route {
   kp_quality_title?: string;
   kp_sort?: string;
   kp_folder?: Id;
+  kp_collection?: Id;
+  kp_category?: string;
 }
 export interface PageRoute {
   [key: string]: string | number | undefined;
@@ -297,12 +308,15 @@ export interface PageRoute {
   qualityTitle?: string;
   sort?: string;
   folder?: Id;
+  collection?: Id;
+  category?: string;
 }
 export interface Row {
   key?: string;
   title?: string;
   original?: string;
   badges?: string[];
+  stats?: { title: string; text: string }[];
   rating?: string;
   subtitle?: string | (() => string);
   symbol?: string;
@@ -317,6 +331,8 @@ export interface PageData {
   title: string;
   rows: Row[];
   actions?: MenuEntry[];
+  tabs?: MenuEntry[];
+  sidebar?: MenuEntry[];
   details?: string;
   description?: string;
   layout?: string;

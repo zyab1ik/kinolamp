@@ -11,7 +11,11 @@ import type {
 import { API, PREFIX, CLIENT_ID, CLIENT_SECRET } from './config.js';
 import { encodeForm } from './text.js';
 // Transport is injected to test OAuth without credentials or real network calls.
-export function createClient(storage: Store, transport: Transport) {
+export function createClient(
+  storage: Store,
+  transport: Transport,
+  categoriesURL?: string
+) {
   var refreshing = false;
   var waiting: ((error?: PluginError | null) => void)[] = [];
   // Logout invalidates pending requests and token refreshes.
@@ -134,6 +138,21 @@ export function createClient(storage: Store, transport: Transport) {
     get: get,
     set: set,
     api: api,
+    categories: function (done: Reply<ApiResponse>) {
+      if (!categoriesURL) {
+        done({ code: 'categories_unavailable' });
+        return;
+      }
+      var expected = generation;
+      // The plugin server receives no KinoPub access or refresh token.
+      transport('GET', categoriesURL, null, {}, function (error, json) {
+        if (expected !== generation) {
+          done({ code: 'session_changed' });
+          return;
+        }
+        done(error, json);
+      });
+    },
     oauth: oauth,
     logout: logout,
     hasToken: function () {

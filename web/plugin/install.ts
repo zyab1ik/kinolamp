@@ -53,7 +53,15 @@ export function install(Lampa: Lampa, $: JQuery, root: Root) {
   var ui = createUi(Lampa);
   var diagnostics = createDiagnostics(Lampa.Storage, Date.now);
   var transport = createTransport(Lampa, diagnostics);
-  var client = createClient(Lampa.Storage, transport);
+  var sourceScript =
+    root.document && (root.document.currentScript as HTMLScriptElement | null);
+  var origin =
+    sourceScript && String(sourceScript.src).match(/^https?:\/\/[^/?#]+/);
+  var client = createClient(
+    Lampa.Storage,
+    transport,
+    origin ? origin[0] + '/api/collections/categories' : ''
+  );
   var authorization = createAuthorization(Lampa, $, client, ui, root);
   var playerDiagnostics = createPlayerDiagnostics(
     Lampa,

@@ -51,7 +51,7 @@ test-go: ## Run Go tests with race detector
 	go test -race $(GO_PACKAGES)
 
 test-js: check-plugin ## Run JavaScript plugin tests (Node.js is only a development tool)
-	node --test test/*.test.js
+	node --test test/*.test.js test/*.test.ts
 
 test-deploy: ## Verify image deployment, rollback and restricted SSH commands
 	bash -n scripts/deploy-receiver.sh test/deploy.test.sh
@@ -66,7 +66,7 @@ coverage-go: ## Require exactly 100% Go statement coverage, with race detector
 	@awk 'NR > 1 && $$2 > 0 && $$3 == 0 {missing++} END {if (missing) {print "FAIL: " missing " uncovered Go statement blocks"; exit 1}}' coverage/go.out
 
 coverage-js: check-plugin ## Require 100% JavaScript lines, branches and functions
-	node --experimental-test-coverage --test-coverage-include=web/static/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js
+	node --experimental-test-coverage --test-coverage-include=web/static/kp.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test test/*.test.js test/*.test.ts
 
 build: ## Build a standalone Go binary containing the plugin assets
 	@mkdir -p bin
